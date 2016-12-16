@@ -42,7 +42,18 @@ values."
      ;; auto-completion
      ;; if you want to enable the tool tip...
      (auto-completion :variables
-     auto-completion-enable-help-tooltip t)
+                       ;; spacemacs-default-company-backends '((company-dabbrev-code
+                       ;;                                       company-gtags
+                       ;;                                       company-etags
+                       ;;                                       company-keywords)
+                       ;;                                      company-semantic
+                       ;;                                      company-files
+                       ;;                                      company-bbdb
+                       ;;                                      company-nxml
+                       ;;                                      company-css
+                       ;;                                      company-eclim)
+                       auto-completion-enable-sort-by-usage t
+                       auto-completion-enable-help-tooltip t)
      better-defaults
      emacs-lisp
      git
@@ -139,9 +150,9 @@ values."
    ;; List of themes, the first of the list is loaded when spacemacs starts.
    ;; Press <SPC> T n to cycle to the next theme in the list (works great
    ;; with 2 themes variants, one dark and one light)
-   dotspacemacs-themes '(lush
-                         tango
-                         deeper-blue
+   dotspacemacs-themes '(default
+                         material
+                         lush
                          spacemacs-dark
                          spacemacs-light)
 
@@ -149,10 +160,10 @@ values."
    dotspacemacs-colorize-cursor-according-to-state t
    ;; Default font, or prioritized list of fonts. `powerline-scale' allows to
    ;; quickly tweak the mode-line size to make separators look not too crappy.
-   dotspacemacs-default-font '("DejaVu Sans Mono"
-                               :size 16
-                               :weight medium
-                               :style Bold
+   dotspacemacs-default-font '("Ubuntu Mono"
+                               :size 18
+                               :weight normal
+                               ;; :style normal
                                :width normal
                                :powerline-scale 1.1)
    ;; The leader key
@@ -261,7 +272,7 @@ values."
    ;; If non nil smooth scrolling (native-scrolling) is enabled. Smooth
    ;; scrolling overrides the default behavior of Emacs which recenters point
    ;; when it reaches the top or bottom of the screen. (default t)
-   dotspacemacs-smooth-scrolling nil
+   dotspacemacs-smooth-scrolling t
    ;; If non nil line numbers are turned on in all `prog-mode' and `text-mode'
    ;; derivatives. If set to `relative', also turns on relative line numbers.
    ;; (default nil)
@@ -329,11 +340,13 @@ you should place your code here."
 
   (with-eval-after-load 'cc-mode
     (setq c-default-style "bsd"
-          c-basic-offset 4))
+          c-basic-offset 2))
 
   (global-company-mode t)
   ;; trying to disable and only use company mode for now
   ;;(global-auto-complete-mode t)
+  ;; set up the autocomplete engine order and sort by usage
+
 
   ;; make sure which key is on and using the minibuffer
   (which-key-mode t)
@@ -354,16 +367,23 @@ you should place your code here."
   (with-eval-after-load 'cc-mode (evil-define-key 'normal c-mode-map "gs"  'helm-gtags-find-rtag))
   (with-eval-after-load 'cc-mode (define-key c-mode-map (kbd "C-c x")  'company-other-backend))
   (with-eval-after-load 'cc-mode (define-key c-mode-map (kbd "C-c d")  'semantic-ia-show-doc))
+  (with-eval-after-load 'cc-mode (define-key c-mode-map (kbd "C-c , f")  'senator-fold-tag-toggle))
+
+  (fset 'paste-over-word
+   [?c ?i ?w ?\C-r ?0 escape])
+
+  (evil-define-key 'normal global-map "zp" 'paste-over-word)
+
 
   ;; (with-eval-after-load 'semantic (setq semantic-idle-scheduler-idle-time 5))
   ;; (with-eval-after-load 'semantic (setq semantic-idle-scheduler-no-working-message t))
 
-  (add-to-list 'company-backends '(company-dabbrev company-gtags) 'company-semantic)
+  ;; might not need this because I set up the company backends in customize variable
+  ;; (with-eval-after-load 'company (add-to-list 'company-backends '(company-dabbrev company-gtags) 'company-semantic ))
 
   ;; (setq python-shell-exec-path "/home/brendanz/anaconda/bin")
   (setq python-shell-interpreter "/home/brendanz/anaconda3/bin/python"
         python-shell-interpreter-args "-i")
-  
   )
 
 
@@ -374,10 +394,20 @@ you should place your code here."
  ;; If you edit it by hand, you could mess it up, so be careful.
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
+ '(ansi-color-faces-vector
+   [default default default italic underline success warning error])
+ '(ansi-color-names-vector
+   ["black" "red3" "ForestGreen" "yellow3" "blue" "magenta3" "DeepSkyBlue" "gray50"])
+ '(company-backends
+   (quote
+    ((company-dabbrev-code company-keywords company-gtags)
+     company-semantic company-files company-dabbrev company-bbdb company-nxml company-css company-clang company-cmake company-oddmuse)))
+ '(evil-want-Y-yank-to-eol nil)
  '(markdown-command "Markdown.pl")
+ '(org-agenda-files nil)
  '(package-selected-packages
    (quote
-    (web-mode tagedit slim-mode scss-mode sass-mode pug-mode less-css-mode helm-css-scss haml-mode emmet-mode company-web web-completion-data csv-mode hide-comnt sublime-themes zonokai-theme stickyfunc-enhance srefactor company-quickhelp pos-tip function-args swiper ivy helm-cscope xcscope helm-gtags ggtags sublimity yapfify pyvenv pytest pyenv-mode py-isort pip-requirements live-py-mode hy-mode helm-pydoc cython-mode company-anaconda anaconda-mode pythonic smeargle orgit org-projectile org-present org org-pomodoro alert log4e gntp org-download mwim mmm-mode markdown-toc markdown-mode magit-gitflow htmlize helm-gitignore helm-company helm-c-yasnippet gnuplot gitignore-mode gitconfig-mode gitattributes-mode git-timemachine git-messenger git-link gh-md evil-magit magit magit-popup git-commit with-editor company-statistics company auto-yasnippet yasnippet ac-ispell auto-complete paradox ws-butler window-numbering which-key volatile-highlights vi-tilde-fringe uuidgen use-package toc-org spaceline powerline restart-emacs request rainbow-delimiters popwin persp-mode pcre2el spinner org-plus-contrib org-bullets open-junk-file neotree move-text macrostep lorem-ipsum linum-relative link-hint info+ indent-guide ido-vertical-mode hydra hungry-delete hl-todo highlight-parentheses highlight-numbers parent-mode highlight-indentation help-fns+ helm-themes helm-swoop helm-projectile helm-mode-manager helm-make projectile pkg-info epl helm-flx helm-descbinds helm-ag google-translate golden-ratio flx-ido flx fill-column-indicator fancy-battery eyebrowse expand-region exec-path-from-shell evil-visualstar evil-visual-mark-mode evil-unimpaired evil-tutor evil-surround evil-search-highlight-persist evil-numbers evil-nerd-commenter evil-mc evil-matchit evil-lisp-state smartparens evil-indent-plus evil-iedit-state iedit evil-exchange evil-escape evil-ediff evil-args evil-anzu anzu evil goto-chg undo-tree eval-sexp-fu highlight elisp-slime-nav dumb-jump f s diminish define-word column-enforce-mode clean-aindent-mode bind-map bind-key auto-highlight-symbol auto-compile packed dash aggressive-indent adaptive-wrap ace-window ace-link ace-jump-helm-line helm avy helm-core popup async quelpa package-build spacemacs-theme)))
+    (soft-stone-theme alect-themes professional-theme light-soap-theme solarized-theme web-mode tagedit slim-mode scss-mode sass-mode pug-mode less-css-mode helm-css-scss haml-mode emmet-mode company-web web-completion-data csv-mode hide-comnt sublime-themes zonokai-theme stickyfunc-enhance srefactor company-quickhelp pos-tip function-args swiper ivy helm-cscope xcscope helm-gtags ggtags sublimity yapfify pyvenv pytest pyenv-mode py-isort pip-requirements live-py-mode hy-mode helm-pydoc cython-mode company-anaconda anaconda-mode pythonic smeargle orgit org-projectile org-present org org-pomodoro alert log4e gntp org-download mwim mmm-mode markdown-toc markdown-mode magit-gitflow htmlize helm-gitignore helm-company helm-c-yasnippet gnuplot gitignore-mode gitconfig-mode gitattributes-mode git-timemachine git-messenger git-link gh-md evil-magit magit magit-popup git-commit with-editor company-statistics company auto-yasnippet yasnippet ac-ispell auto-complete paradox ws-butler window-numbering which-key volatile-highlights vi-tilde-fringe uuidgen use-package toc-org spaceline powerline restart-emacs request rainbow-delimiters popwin persp-mode pcre2el spinner org-plus-contrib org-bullets open-junk-file neotree move-text macrostep lorem-ipsum linum-relative link-hint info+ indent-guide ido-vertical-mode hydra hungry-delete hl-todo highlight-parentheses highlight-numbers parent-mode highlight-indentation help-fns+ helm-themes helm-swoop helm-projectile helm-mode-manager helm-make projectile pkg-info epl helm-flx helm-descbinds helm-ag google-translate golden-ratio flx-ido flx fill-column-indicator fancy-battery eyebrowse expand-region exec-path-from-shell evil-visualstar evil-visual-mark-mode evil-unimpaired evil-tutor evil-surround evil-search-highlight-persist evil-numbers evil-nerd-commenter evil-mc evil-matchit evil-lisp-state smartparens evil-indent-plus evil-iedit-state iedit evil-exchange evil-escape evil-ediff evil-args evil-anzu anzu evil goto-chg undo-tree eval-sexp-fu highlight elisp-slime-nav dumb-jump f s diminish define-word column-enforce-mode clean-aindent-mode bind-map bind-key auto-highlight-symbol auto-compile packed dash aggressive-indent adaptive-wrap ace-window ace-link ace-jump-helm-line helm avy helm-core popup async quelpa package-build spacemacs-theme)))
  '(safe-local-variable-values
    (quote
     ((projectile-project-compilation-dir quote /pca10040/blank/armgcc)
