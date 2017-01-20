@@ -31,6 +31,7 @@ values."
    ;; List of configuration layers to load.
    dotspacemacs-configuration-layers
    '(
+     (javascript :variables tern-command '("nodejs" "/home/brendanz/node_modules/tern/bin/tern"))
      html
      csv
      ;; ----------------------------------------------------------------
@@ -38,35 +39,27 @@ values."
      ;; Uncomment some layer names and press <SPC f e R> (Vim style) or
      ;; <M-m f e R> (Emacs style) to install them.
      ;; ----------------------------------------------------------------
-     helm
-     ;; auto-completion
+     ;; helm
+     ivy
+     auto-completion
      ;; if you want to enable the tool tip...
-     (auto-completion :variables
-                       ;; spacemacs-default-company-backends '((company-dabbrev-code
-                       ;;                                       company-gtags
-                       ;;                                       company-etags
-                       ;;                                       company-keywords)
-                       ;;                                      company-semantic
-                       ;;                                      company-files
-                       ;;                                      company-bbdb
-                       ;;                                      company-nxml
-                       ;;                                      company-css
-                       ;;                                      company-eclim)
-                       auto-completion-enable-sort-by-usage t
-                       auto-completion-enable-help-tooltip t)
+     ;; (auto-completion :variables
+                       ;; auto-completion-enable-sort-by-usage t
+                       ;; auto-completion-enable-help-tooltip t)
      better-defaults
      emacs-lisp
      git
      markdown
      org
      python
-     ((c-c++ :variables c-c++-enable-clang-support t))
      semantic
      gtags
      cscope
-     ;; (shell :variables
-     ;;        shell-default-height 30
-     ;;        shell-default-position 'bottom)
+     html
+     javascript
+     (shell :variables
+            shell-default-height 30
+            shell-default-position 'bottom)
      ;; spell-checking
      ;; syntax-checking
      ;; version-control
@@ -127,14 +120,14 @@ values."
    ;; (default 'vim)
    dotspacemacs-editing-style 'vim
    ;; If non nil output loading progress in `*Messages*' buffer. (default nil)
-   dotspacemacs-verbose-loading nil
+   dotspacemacs-verbose-loading t
    ;; Specify the startup banner. Default value is `official', it displays
    ;; the official spacemacs logo. An integer value is the index of text
    ;; banner, `random' chooses a random text banner in `core/banners'
    ;; directory. A string value must be a path to an image format supported
    ;; by your Emacs build.
    ;; If the value is nil then no banner is displayed. (default 'official)
-   dotspacemacs-startup-banner 'official
+   dotspacemacs-startup-banner nil
    ;; List of items to show in startup buffer or an association list of
    ;; the form `(list-type . list-size)`. If nil then it is disabled.
    ;; Possible values for list-type are:
@@ -150,9 +143,10 @@ values."
    ;; List of themes, the first of the list is loaded when spacemacs starts.
    ;; Press <SPC> T n to cycle to the next theme in the list (works great
    ;; with 2 themes variants, one dark and one light)
-   dotspacemacs-themes '(default
+   dotspacemacs-themes '(monokai
                          material
-                         lush
+                         default
+                         ample
                          spacemacs-dark
                          spacemacs-light)
 
@@ -161,11 +155,11 @@ values."
    ;; Default font, or prioritized list of fonts. `powerline-scale' allows to
    ;; quickly tweak the mode-line size to make separators look not too crappy.
    dotspacemacs-default-font '("Ubuntu Mono"
-                               :size 18
+                               :size 15
                                :weight normal
                                ;; :style normal
                                :width normal
-                               :powerline-scale 1.1)
+                               :powerline-scale 0.8)
    ;; The leader key
    dotspacemacs-leader-key "SPC"
    ;; The leader key accessible in `emacs state' and `insert state'
@@ -343,48 +337,67 @@ you should place your code here."
           c-basic-offset 2))
 
   (global-company-mode t)
-  ;; trying to disable and only use company mode for now
-  ;;(global-auto-complete-mode t)
-  ;; set up the autocomplete engine order and sort by usage
 
+  ;; fix the emacs lisp backends so that the stupid capf is not available
+  (setq company-backends-emacs-lisp-mode '((company-elisp company-dabbrev-code company-keywords company-gtags company-etags)))
 
   ;; make sure which key is on and using the minibuffer
   (which-key-mode t)
   (which-key-setup-minibuffer)
 
-  ;; modify the c mode syntax table in order to not use _ as a word delimiter
+  ;; modify some of the mode syntax table in order to not use _ as a word delimiter
+  ;; may want to just do underscores globally, causes more annoyance than not
   (add-hook 'c-mode-hook #'(lambda () (modify-syntax-entry ?_ "w")))
+  (add-hook 'csv-mode-hook #'(lambda () (modify-syntax-entry ?_ "w")))
+  (add-hook 'python-mode-hook #'(lambda () (modify-syntax-entry ?_ "w")))
+
+  ;; turn off some of the more annoying semantic features
+  (add-hook 'semantic-mode-hook (lambda () (global-semantic-stickyfunc-mode -1)))
+  (add-hook 'semantic-mode-hook (lambda () (global-semantic-idle-summary-mode -1)))
 
   ;; add some modes to c-mode
   (add-hook 'c-mode-hook 'ggtags-mode)
   (add-hook 'c-mode-hook 'cscope-minor-mode)
-
+  (with-eval-after-load 'cc-mode (spacemacs|define-jump-handlers 'ccmode 'ggtags-find-tag-dwim))
   ;; useful shortcuts for ggtags, since they are not enabled by default.
-  (with-eval-after-load 'cc-mode (evil-define-key 'normal c-mode-map "gg"  'helm-gtags-dwim))
-  (with-eval-after-load 'cc-mode (evil-define-key 'normal c-mode-map "gb"  'helm-gtags-pop-stack))
-  (with-eval-after-load 'cc-mode (evil-define-key 'normal c-mode-map "gG"  'helm-gtags-dwim-other-window))
+  (with-eval-after-load 'cc-mode (evil-define-key 'normal c-mode-map "gd"  'ggtags-find-tag-dwim))
+  (with-eval-after-load 'cc-mode (evil-define-key 'normal c-mode-map "gb"  'ggtags-prev-mark))
+  (with-eval-after-load 'cc-mode (evil-define-key 'normal c-mode-map "gG"  'ggtags-show-definition))
   (with-eval-after-load 'cc-mode (evil-define-key 'normal c-mode-map "gr"  'ggtags-update-tags))
   (with-eval-after-load 'cc-mode (evil-define-key 'normal c-mode-map "gs"  'helm-gtags-find-rtag))
   (with-eval-after-load 'cc-mode (define-key c-mode-map (kbd "C-c x")  'company-other-backend))
   (with-eval-after-load 'cc-mode (define-key c-mode-map (kbd "C-c d")  'semantic-ia-show-doc))
   (with-eval-after-load 'cc-mode (define-key c-mode-map (kbd "C-c , f")  'senator-fold-tag-toggle))
 
+  ;; MACROS ========================================================================================
   (fset 'paste-over-word
    [?c ?i ?w ?\C-r ?0 escape])
 
-  (evil-define-key 'normal global-map "zp" 'paste-over-word)
+  (fset 'split-at-next-comma
+   [?f ?, ?a return escape])
+
+  (fset 'paste-over-remain-word
+   [?c ?w ?\C-r ?0 escape])
 
 
-  ;; (with-eval-after-load 'semantic (setq semantic-idle-scheduler-idle-time 5))
-  ;; (with-eval-after-load 'semantic (setq semantic-idle-scheduler-no-working-message t))
+  (spacemacs/set-leader-keys "o," 'split-at-next-comma)
+  (spacemacs/set-leader-keys "opw" 'paste-over-word)
+  (spacemacs/set-leader-keys "opo" 'paste-over-remain-word)
 
-  ;; might not need this because I set up the company backends in customize variable
-  ;; (with-eval-after-load 'company (add-to-list 'company-backends '(company-dabbrev company-gtags) 'company-semantic ))
+  ;; ===============================================================================================
+
 
   ;; (setq python-shell-exec-path "/home/brendanz/anaconda/bin")
   (setq python-shell-interpreter "/home/brendanz/anaconda3/bin/python"
         python-shell-interpreter-args "-i")
   )
+
+
+  ;; terminal settings
+  ;; http://stackoverflow.com/questions/6820051/unicode-characters-in-emacs-term-mode/7442266#7442266
+  (defadvice ansi-term (after advise-ansi-term-coding-system)
+      (set-buffer-process-coding-system 'utf-8-unix 'utf-8-unix))
+  (ad-activate 'ansi-term)
 
 
 ;; Do not write anything past this comment. This is where Emacs will
@@ -400,20 +413,71 @@ you should place your code here."
    ["black" "red3" "ForestGreen" "yellow3" "blue" "magenta3" "DeepSkyBlue" "gray50"])
  '(company-backends
    (quote
-    ((company-dabbrev-code company-keywords company-gtags)
-     company-semantic company-files company-dabbrev company-bbdb company-nxml company-css company-clang company-cmake company-oddmuse)))
+    ((company-dabbrev company-dabbrev-code company-keywords)
+     company-semantic company-files
+     (company-gtags company-etags)
+     company-dabbrev company-bbdb company-nxml company-css company-clang company-cmake company-oddmuse)))
+ '(compilation-message-face (quote default))
+ '(custom-safe-themes
+   (quote
+    ("bffa9739ce0752a37d9b1eee78fc00ba159748f50dc328af4be661484848e476" default)))
  '(evil-want-Y-yank-to-eol nil)
+ '(fci-rule-color "#2e2e2e")
+ '(fill-column 100)
+ '(global-semantic-idle-summary-mode nil)
+ '(global-semantic-stickyfunc-mode nil)
+ '(highlight-changes-colors (quote ("#FD5FF0" "#AE81FF")))
+ '(highlight-tail-colors
+   (quote
+    (("#3C3D37" . 0)
+     ("#679A01" . 20)
+     ("#4BBEAE" . 30)
+     ("#1DB4D0" . 50)
+     ("#9A8F21" . 60)
+     ("#A75B00" . 70)
+     ("#F309DF" . 85)
+     ("#3C3D37" . 100))))
+ '(magit-diff-use-overlays nil)
  '(markdown-command "Markdown.pl")
- '(org-agenda-files nil)
+ '(nrepl-message-colors
+   (quote
+    ("#CC9393" "#DFAF8F" "#F0DFAF" "#7F9F7F" "#BFEBBF" "#93E0E3" "#94BFF3" "#DC8CC3")))
+ '(org-agenda-files (quote ("~/org/vest_charger.org")))
  '(package-selected-packages
    (quote
-    (soft-stone-theme alect-themes professional-theme light-soap-theme solarized-theme web-mode tagedit slim-mode scss-mode sass-mode pug-mode less-css-mode helm-css-scss haml-mode emmet-mode company-web web-completion-data csv-mode hide-comnt sublime-themes zonokai-theme stickyfunc-enhance srefactor company-quickhelp pos-tip function-args swiper ivy helm-cscope xcscope helm-gtags ggtags sublimity yapfify pyvenv pytest pyenv-mode py-isort pip-requirements live-py-mode hy-mode helm-pydoc cython-mode company-anaconda anaconda-mode pythonic smeargle orgit org-projectile org-present org org-pomodoro alert log4e gntp org-download mwim mmm-mode markdown-toc markdown-mode magit-gitflow htmlize helm-gitignore helm-company helm-c-yasnippet gnuplot gitignore-mode gitconfig-mode gitattributes-mode git-timemachine git-messenger git-link gh-md evil-magit magit magit-popup git-commit with-editor company-statistics company auto-yasnippet yasnippet ac-ispell auto-complete paradox ws-butler window-numbering which-key volatile-highlights vi-tilde-fringe uuidgen use-package toc-org spaceline powerline restart-emacs request rainbow-delimiters popwin persp-mode pcre2el spinner org-plus-contrib org-bullets open-junk-file neotree move-text macrostep lorem-ipsum linum-relative link-hint info+ indent-guide ido-vertical-mode hydra hungry-delete hl-todo highlight-parentheses highlight-numbers parent-mode highlight-indentation help-fns+ helm-themes helm-swoop helm-projectile helm-mode-manager helm-make projectile pkg-info epl helm-flx helm-descbinds helm-ag google-translate golden-ratio flx-ido flx fill-column-indicator fancy-battery eyebrowse expand-region exec-path-from-shell evil-visualstar evil-visual-mark-mode evil-unimpaired evil-tutor evil-surround evil-search-highlight-persist evil-numbers evil-nerd-commenter evil-mc evil-matchit evil-lisp-state smartparens evil-indent-plus evil-iedit-state iedit evil-exchange evil-escape evil-ediff evil-args evil-anzu anzu evil goto-chg undo-tree eval-sexp-fu highlight elisp-slime-nav dumb-jump f s diminish define-word column-enforce-mode clean-aindent-mode bind-map bind-key auto-highlight-symbol auto-compile packed dash aggressive-indent adaptive-wrap ace-window ace-link ace-jump-helm-line helm avy helm-core popup async quelpa package-build spacemacs-theme)))
+    (web-beautify livid-mode skewer-mode simple-httpd json-mode json-snatcher json-reformat js2-refactor multiple-cursors js2-mode js-doc company-tern dash-functional tern coffee-mode material-theme molokai-theme seti-theme ample-theme ample-zenburn-theme xterm-color shell-pop multi-term eshell-z eshell-prompt-extras esh-help wgrep smex ivy-hydra counsel-projectile counsel soft-stone-theme alect-themes professional-theme light-soap-theme solarized-theme web-mode tagedit slim-mode scss-mode sass-mode pug-mode less-css-mode helm-css-scss haml-mode emmet-mode company-web web-completion-data csv-mode hide-comnt sublime-themes zonokai-theme stickyfunc-enhance srefactor company-quickhelp pos-tip function-args swiper ivy helm-cscope xcscope helm-gtags ggtags sublimity yapfify pyvenv pytest pyenv-mode py-isort pip-requirements live-py-mode hy-mode helm-pydoc cython-mode company-anaconda anaconda-mode pythonic smeargle orgit org-projectile org-present org org-pomodoro alert log4e gntp org-download mwim mmm-mode markdown-toc markdown-mode magit-gitflow htmlize helm-gitignore helm-company helm-c-yasnippet gnuplot gitignore-mode gitconfig-mode gitattributes-mode git-timemachine git-messenger git-link gh-md evil-magit magit magit-popup git-commit with-editor company-statistics company auto-yasnippet yasnippet ac-ispell auto-complete paradox ws-butler window-numbering which-key volatile-highlights vi-tilde-fringe uuidgen use-package toc-org spaceline powerline restart-emacs request rainbow-delimiters popwin persp-mode pcre2el spinner org-plus-contrib org-bullets open-junk-file neotree move-text macrostep lorem-ipsum linum-relative link-hint info+ indent-guide ido-vertical-mode hydra hungry-delete hl-todo highlight-parentheses highlight-numbers parent-mode highlight-indentation help-fns+ helm-themes helm-swoop helm-projectile helm-mode-manager helm-make projectile pkg-info epl helm-flx helm-descbinds helm-ag google-translate golden-ratio flx-ido flx fill-column-indicator fancy-battery eyebrowse expand-region exec-path-from-shell evil-visualstar evil-visual-mark-mode evil-unimpaired evil-tutor evil-surround evil-search-highlight-persist evil-numbers evil-nerd-commenter evil-mc evil-matchit evil-lisp-state smartparens evil-indent-plus evil-iedit-state iedit evil-exchange evil-escape evil-ediff evil-args evil-anzu anzu evil goto-chg undo-tree eval-sexp-fu highlight elisp-slime-nav dumb-jump f s diminish define-word column-enforce-mode clean-aindent-mode bind-map bind-key auto-highlight-symbol auto-compile packed dash aggressive-indent adaptive-wrap ace-window ace-link ace-jump-helm-line helm avy helm-core popup async quelpa package-build spacemacs-theme)))
+ '(pos-tip-background-color "#A6E22E")
+ '(pos-tip-foreground-color "#272822")
  '(safe-local-variable-values
    (quote
     ((projectile-project-compilation-dir quote /pca10040/blank/armgcc)
      (projectile-project-compilation-dir . pca10040/blank/armgcc)
      (projectile-project-compilation-dir \./pca10040/blank/armgcc)
-     (projectile-project-name . smartvalve_simulator)))))
+     (projectile-project-name . smartvalve_simulator))))
+ '(vc-annotate-background "#3b3b3b")
+ '(vc-annotate-color-map
+   (quote
+    ((20 . "#dd5542")
+     (40 . "#CC5542")
+     (60 . "#fb8512")
+     (80 . "#baba36")
+     (100 . "#bdbc61")
+     (120 . "#7d7c61")
+     (140 . "#6abd50")
+     (160 . "#6aaf50")
+     (180 . "#6aa350")
+     (200 . "#6a9550")
+     (220 . "#6a8550")
+     (240 . "#6a7550")
+     (260 . "#9b55c3")
+     (280 . "#6CA0A3")
+     (300 . "#528fd1")
+     (320 . "#5180b3")
+     (340 . "#6380b3")
+     (360 . "#DC8CC3"))))
+ '(vc-annotate-very-old-color "#DC8CC3")
+ '(weechat-color-list
+   (unspecified "#272822" "#3C3D37" "#F70057" "#F92672" "#86C30D" "#A6E22E" "#BEB244" "#E6DB74" "#40CAE4" "#66D9EF" "#FB35EA" "#FD5FF0" "#74DBCD" "#A1EFE4" "#F8F8F2" "#F8F8F0")))
 (custom-set-faces
  ;; custom-set-faces was added by Custom.
  ;; If you edit it by hand, you could mess it up, so be careful.
