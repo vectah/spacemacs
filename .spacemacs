@@ -40,18 +40,22 @@ values."
      ;; <M-m f e R> (Emacs style) to install them.
      ;; ----------------------------------------------------------------
      ;; helm
-     ivy
+     (ivy :variables
+          ivy-initial-inputs-alist nil)
      auto-completion
      ;; if you want to enable the tool tip...
      ;; (auto-completion :variables
                        ;; auto-completion-enable-sort-by-usage t
                        ;; auto-completion-enable-help-tooltip t)
      better-defaults
+     themes-megapack
      emacs-lisp
      git
      markdown
      org
      python
+     (ipython-notebook :variables
+                       ein:use-auto-complete t)
      semantic
      gtags
      cscope
@@ -143,10 +147,7 @@ values."
    ;; List of themes, the first of the list is loaded when spacemacs starts.
    ;; Press <SPC> T n to cycle to the next theme in the list (works great
    ;; with 2 themes variants, one dark and one light)
-   dotspacemacs-themes '(monokai
-                         material
-                         default
-                         ample
+   dotspacemacs-themes '(darkokai
                          spacemacs-dark
                          spacemacs-light)
 
@@ -154,8 +155,8 @@ values."
    dotspacemacs-colorize-cursor-according-to-state t
    ;; Default font, or prioritized list of fonts. `powerline-scale' allows to
    ;; quickly tweak the mode-line size to make separators look not too crappy.
-   dotspacemacs-default-font '("Ubuntu Mono"
-                               :size 15
+   dotspacemacs-default-font '("Source Code Pro"
+                               :size 13
                                :weight normal
                                ;; :style normal
                                :width normal
@@ -270,7 +271,7 @@ values."
    ;; If non nil line numbers are turned on in all `prog-mode' and `text-mode'
    ;; derivatives. If set to `relative', also turns on relative line numbers.
    ;; (default nil)
-   dotspacemacs-line-numbers t
+   dotspacemacs-line-numbers nil
    ;; Code folding method. Possible values are `evil' and `origami'.
    ;; (default 'evil)
    dotspacemacs-folding-method 'evil
@@ -320,6 +321,10 @@ layers configuration.
 This is the place where most of your configurations should be done. Unless it is
 explicitly specified that a variable should be set before a package is loaded,
 you should place your code here."
+
+  ;; custom commands ===============================================================================
+  ;; ===============================================================================================
+
   (fa-config-default)
   ;; (load-file "~/.emacs.d/sublimity/sublimity.el")
   ;; (load-file "~/.emacs.d/sublimity/sublimity-scroll.el")
@@ -369,7 +374,31 @@ you should place your code here."
   (with-eval-after-load 'cc-mode (define-key c-mode-map (kbd "C-c d")  'semantic-ia-show-doc))
   (with-eval-after-load 'cc-mode (define-key c-mode-map (kbd "C-c , f")  'senator-fold-tag-toggle))
 
-  ;; MACROS ========================================================================================
+;; custom commands =================================================================================
+(defun xah-copy-file-path (&optional *dir-path-only-p)
+  "Copy the current buffer's file path or dired path to `kill-ring'.
+Result is full path.
+If `universal-argument' is called first, copy only the dir path.
+URL `http://ergoemacs.org/emacs/emacs_copy_file_path.html'
+Version 2017-01-27"
+  (interactive "P")
+  (let ((-fpath
+         (if (equal major-mode 'dired-mode)
+             (expand-file-name default-directory)
+           (if (buffer-file-name)
+               (buffer-file-name)
+             (user-error "Current buffer is not associated with a file.")))))
+    (kill-new
+     (if *dir-path-only-p
+         (progn
+           (message "Directory path copied: 「%s」" (file-name-directory -fpath))
+           (file-name-directory -fpath))
+       (progn
+         (message "File path copied: 「%s」" -fpath)
+         -fpath )))))
+;; =================================================================================================
+
+;; MACROS ========================================================================================
   (fset 'paste-over-word
    [?c ?i ?w ?\C-r ?0 escape])
 
@@ -379,11 +408,42 @@ you should place your code here."
   (fset 'paste-over-remain-word
    [?c ?w ?\C-r ?0 escape])
 
+  (fset 'add-semicolon
+   [?A ?\; escape])
+
+  (fset 'battery_stat_insert_macro
+   [?y ?y ?  ?w ?o ?  ?4 ?p ?  ?w ?o down down down down ?2 ?y ?y ?  ?w ?o ?  ?5 ?p ?0 ?i ?  ?  ?  ?  escape ?j ?A ?, escape ?  ?w ?o down down down down down ?y ?y ?  ?w ?o ?  ?6 ?p ?A ?, escape ?  ?w ?o down ?y ?y ?  ?w ?o ?  ?7 ?p ?A ?\; escape ?  ?w ?o down down down down ?4 ?y ?y ?  ?w ?o ?  ?3 ?p ?\C-i down ?\C-i down ?\C-i down ?\C-i ?  ?w ?o down down down down ?y ?y ?  ?w ?o ?  ?1 ?p ?\C-i ?  ?w ?o down down down down ?y ?y ?  ?w ?o ?  ?2 ?p ?\C-i ?  ?w ?o])
+
+  (fset 'comment_batt_stat
+   [?g ?c ?c up ?g ?c ?c up ?g ?c ?c up ?g ?c ?c up ?  ?2 ?g ?c ?c up ?  ?1 ?g ?c ?c up ?  ?4 ?g ?c ?c up ?  ?5 ?g ?c ?c up up ?  ?6 ?g ?c ?c up ?  ?7 ?g ?c ?c up ?  ?3])
+
 
   (spacemacs/set-leader-keys "o," 'split-at-next-comma)
   (spacemacs/set-leader-keys "opw" 'paste-over-word)
   (spacemacs/set-leader-keys "opo" 'paste-over-remain-word)
+  (spacemacs/set-leader-keys "o;" 'add-semicolon)
+  (spacemacs/set-leader-keys "ocd" 'xah-copy-file-path)
 
+
+;; ===============================================================================================
+
+;; IVY modifications =============================================================================
+  (defun ivy-copy-to-buffer-action (x)
+    (with-ivy-window
+      (insert x)))
+
+  (defun ivy-yank-action (x)
+    (kill-new x))
+
+  (ivy-set-actions
+   t
+   '(("i" ivy-copy-to-buffer-action "insert")
+     ("y" ivy-yank-action "yank")
+     ("k" ivy-kill-line "kill-line")))
+  ;; ===============================================================================================
+
+  ;; AVY modifications =============================================================================
+  (spacemacs/set-leader-keys "jy" 'avy-copy-line)
   ;; ===============================================================================================
 
 
@@ -399,6 +459,8 @@ you should place your code here."
       (set-buffer-process-coding-system 'utf-8-unix 'utf-8-unix))
   (ad-activate 'ansi-term)
 
+;; set our customer dark background colo
+(with-eval-after-load 'darkokai-theme (set-background-color "gray5"))
 
 ;; Do not write anything past this comment. This is where Emacs will
 ;; auto-generate custom variable definitions.
@@ -409,8 +471,6 @@ you should place your code here."
  ;; If there is more than one, they won't work right.
  '(ansi-color-faces-vector
    [default default default italic underline success warning error])
- '(ansi-color-names-vector
-   ["black" "red3" "ForestGreen" "yellow3" "blue" "magenta3" "DeepSkyBlue" "gray50"])
  '(company-backends
    (quote
     ((company-dabbrev company-dabbrev-code company-keywords)
@@ -424,6 +484,7 @@ you should place your code here."
  '(evil-want-Y-yank-to-eol nil)
  '(fci-rule-color "#2e2e2e")
  '(fill-column 100)
+ '(frame-background-mode (quote dark))
  '(global-semantic-idle-summary-mode nil)
  '(global-semantic-stickyfunc-mode nil)
  '(highlight-changes-colors (quote ("#FD5FF0" "#AE81FF")))
@@ -445,7 +506,7 @@ you should place your code here."
  '(org-agenda-files (quote ("~/org/vest_charger.org")))
  '(package-selected-packages
    (quote
-    (web-beautify livid-mode skewer-mode simple-httpd json-mode json-snatcher json-reformat js2-refactor multiple-cursors js2-mode js-doc company-tern dash-functional tern coffee-mode material-theme molokai-theme seti-theme ample-theme ample-zenburn-theme xterm-color shell-pop multi-term eshell-z eshell-prompt-extras esh-help wgrep smex ivy-hydra counsel-projectile counsel soft-stone-theme alect-themes professional-theme light-soap-theme solarized-theme web-mode tagedit slim-mode scss-mode sass-mode pug-mode less-css-mode helm-css-scss haml-mode emmet-mode company-web web-completion-data csv-mode hide-comnt sublime-themes zonokai-theme stickyfunc-enhance srefactor company-quickhelp pos-tip function-args swiper ivy helm-cscope xcscope helm-gtags ggtags sublimity yapfify pyvenv pytest pyenv-mode py-isort pip-requirements live-py-mode hy-mode helm-pydoc cython-mode company-anaconda anaconda-mode pythonic smeargle orgit org-projectile org-present org org-pomodoro alert log4e gntp org-download mwim mmm-mode markdown-toc markdown-mode magit-gitflow htmlize helm-gitignore helm-company helm-c-yasnippet gnuplot gitignore-mode gitconfig-mode gitattributes-mode git-timemachine git-messenger git-link gh-md evil-magit magit magit-popup git-commit with-editor company-statistics company auto-yasnippet yasnippet ac-ispell auto-complete paradox ws-butler window-numbering which-key volatile-highlights vi-tilde-fringe uuidgen use-package toc-org spaceline powerline restart-emacs request rainbow-delimiters popwin persp-mode pcre2el spinner org-plus-contrib org-bullets open-junk-file neotree move-text macrostep lorem-ipsum linum-relative link-hint info+ indent-guide ido-vertical-mode hydra hungry-delete hl-todo highlight-parentheses highlight-numbers parent-mode highlight-indentation help-fns+ helm-themes helm-swoop helm-projectile helm-mode-manager helm-make projectile pkg-info epl helm-flx helm-descbinds helm-ag google-translate golden-ratio flx-ido flx fill-column-indicator fancy-battery eyebrowse expand-region exec-path-from-shell evil-visualstar evil-visual-mark-mode evil-unimpaired evil-tutor evil-surround evil-search-highlight-persist evil-numbers evil-nerd-commenter evil-mc evil-matchit evil-lisp-state smartparens evil-indent-plus evil-iedit-state iedit evil-exchange evil-escape evil-ediff evil-args evil-anzu anzu evil goto-chg undo-tree eval-sexp-fu highlight elisp-slime-nav dumb-jump f s diminish define-word column-enforce-mode clean-aindent-mode bind-map bind-key auto-highlight-symbol auto-compile packed dash aggressive-indent adaptive-wrap ace-window ace-link ace-jump-helm-line helm avy helm-core popup async quelpa package-build spacemacs-theme)))
+    (zenburn-theme zen-and-art-theme underwater-theme ujelly-theme twilight-theme twilight-bright-theme twilight-anti-bright-theme tronesque-theme toxi-theme tao-theme tangotango-theme tango-plus-theme tango-2-theme sunny-day-theme subatomic256-theme subatomic-theme spacegray-theme soothe-theme soft-morning-theme soft-charcoal-theme smyx-theme reverse-theme railscasts-theme purple-haze-theme planet-theme phoenix-dark-pink-theme phoenix-dark-mono-theme pastels-on-dark-theme organic-green-theme omtose-phellack-theme oldlace-theme occidental-theme obsidian-theme noctilux-theme niflheim-theme naquadah-theme mustang-theme monochrome-theme moe-theme minimal-theme majapahit-theme lush-theme jbeans-theme jazz-theme ir-black-theme inkpot-theme heroku-theme hemisu-theme hc-zenburn-theme gruvbox-theme gruber-darker-theme grandshell-theme gotham-theme gandalf-theme flatui-theme flatland-theme firebelly-theme farmhouse-theme espresso-theme dracula-theme django-theme darktooth-theme autothemer darkokai-theme darkmine-theme darkburn-theme dakrone-theme cyberpunk-theme color-theme-sanityinc-tomorrow color-theme-sanityinc-solarized clues-theme cherry-blossom-theme busybee-theme bubbleberry-theme birds-of-paradise-plus-theme badwolf-theme apropospriate-theme anti-zenburn-theme ample-zen-theme afternoon-theme ein websocket web-beautify livid-mode skewer-mode simple-httpd json-mode json-snatcher json-reformat js2-refactor multiple-cursors js2-mode js-doc company-tern dash-functional tern coffee-mode material-theme molokai-theme seti-theme ample-theme ample-zenburn-theme xterm-color shell-pop multi-term eshell-z eshell-prompt-extras esh-help wgrep smex ivy-hydra counsel-projectile counsel soft-stone-theme alect-themes professional-theme light-soap-theme solarized-theme web-mode tagedit slim-mode scss-mode sass-mode pug-mode less-css-mode helm-css-scss haml-mode emmet-mode company-web web-completion-data csv-mode hide-comnt sublime-themes zonokai-theme stickyfunc-enhance srefactor company-quickhelp pos-tip function-args swiper ivy helm-cscope xcscope helm-gtags ggtags sublimity yapfify pyvenv pytest pyenv-mode py-isort pip-requirements live-py-mode hy-mode helm-pydoc cython-mode company-anaconda anaconda-mode pythonic smeargle orgit org-projectile org-present org org-pomodoro alert log4e gntp org-download mwim mmm-mode markdown-toc markdown-mode magit-gitflow htmlize helm-gitignore helm-company helm-c-yasnippet gnuplot gitignore-mode gitconfig-mode gitattributes-mode git-timemachine git-messenger git-link gh-md evil-magit magit magit-popup git-commit with-editor company-statistics company auto-yasnippet yasnippet ac-ispell auto-complete paradox ws-butler window-numbering which-key volatile-highlights vi-tilde-fringe uuidgen use-package toc-org spaceline powerline restart-emacs request rainbow-delimiters popwin persp-mode pcre2el spinner org-plus-contrib org-bullets open-junk-file neotree move-text macrostep lorem-ipsum linum-relative link-hint info+ indent-guide ido-vertical-mode hydra hungry-delete hl-todo highlight-parentheses highlight-numbers parent-mode highlight-indentation help-fns+ helm-themes helm-swoop helm-projectile helm-mode-manager helm-make projectile pkg-info epl helm-flx helm-descbinds helm-ag google-translate golden-ratio flx-ido flx fill-column-indicator fancy-battery eyebrowse expand-region exec-path-from-shell evil-visualstar evil-visual-mark-mode evil-unimpaired evil-tutor evil-surround evil-search-highlight-persist evil-numbers evil-nerd-commenter evil-mc evil-matchit evil-lisp-state smartparens evil-indent-plus evil-iedit-state iedit evil-exchange evil-escape evil-ediff evil-args evil-anzu anzu evil goto-chg undo-tree eval-sexp-fu highlight elisp-slime-nav dumb-jump f s diminish define-word column-enforce-mode clean-aindent-mode bind-map bind-key auto-highlight-symbol auto-compile packed dash aggressive-indent adaptive-wrap ace-window ace-link ace-jump-helm-line helm avy helm-core popup async quelpa package-build spacemacs-theme)))
  '(pos-tip-background-color "#A6E22E")
  '(pos-tip-foreground-color "#272822")
  '(safe-local-variable-values
@@ -454,6 +515,9 @@ you should place your code here."
      (projectile-project-compilation-dir . pca10040/blank/armgcc)
      (projectile-project-compilation-dir \./pca10040/blank/armgcc)
      (projectile-project-name . smartvalve_simulator))))
+ '(semantic-imenu-bucketize-file t)
+ '(semantic-imenu-bucketize-type-members t)
+ '(semantic-imenu-summary-function (quote semantic-format-tag-name))
  '(vc-annotate-background "#3b3b3b")
  '(vc-annotate-color-map
    (quote
@@ -477,7 +541,11 @@ you should place your code here."
      (360 . "#DC8CC3"))))
  '(vc-annotate-very-old-color "#DC8CC3")
  '(weechat-color-list
-   (unspecified "#272822" "#3C3D37" "#F70057" "#F92672" "#86C30D" "#A6E22E" "#BEB244" "#E6DB74" "#40CAE4" "#66D9EF" "#FB35EA" "#FD5FF0" "#74DBCD" "#A1EFE4" "#F8F8F2" "#F8F8F0")))
+   (unspecified "#272822" "#3C3D37" "#F70057" "#F92672" "#86C30D" "#A6E22E" "#BEB244" "#E6DB74" "#40CAE4" "#66D9EF" "#FB35EA" "#FD5FF0" "#74DBCD" "#A1EFE4" "#F8F8F2" "#F8F8F0"))
+ '(xterm-color-names
+   ["#303030" "#D66F84" "#D79887" "#D49A8A" "#94B1A3" "#A8938C" "#989584" "#BAB2A9"])
+ '(xterm-color-names-bright
+   ["#3A3A3A" "#E47386" "#CC816B" "#769188" "#7D6F6A" "#9C8772" "#BAB2A9"]))
 (custom-set-faces
  ;; custom-set-faces was added by Custom.
  ;; If you edit it by hand, you could mess it up, so be careful.
