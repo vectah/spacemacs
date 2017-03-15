@@ -31,6 +31,7 @@ values."
    ;; List of configuration layers to load.
    dotspacemacs-configuration-layers
    '(
+     php
      (javascript :variables tern-command '("nodejs" "/home/brendanz/node_modules/tern/bin/tern"))
      html
      csv
@@ -42,12 +43,16 @@ values."
      ;; helm
      (ivy :variables
           ivy-initial-inputs-alist nil)
+     (evil-snipe :variables
+                 evil-snipe-enable-alternate-f-and-t-behaivors t
+                 evil-snipe-override-local-mode t)
      auto-completion
      ;; if you want to enable the tool tip...
      ;; (auto-completion :variables
                        ;; auto-completion-enable-sort-by-usage t
                        ;; auto-completion-enable-help-tooltip t)
      better-defaults
+     pandoc
      themes-megapack
      emacs-lisp
      imenu-list
@@ -61,6 +66,7 @@ values."
      c-c++
      gtags
      cscope
+     syntax-checking
      html
      javascript
      (shell :variables
@@ -140,7 +146,7 @@ values."
    ;; `recents' `bookmarks' `projects' `agenda' `todos'."
    ;; List sizes may be nil, in which case
    ;; `spacemacs-buffer-startup-lists-length' takes effect.
-   dotspacemacs-startup-lists '((recents . 5)
+   dotspacemacs-startup-lists '((recents . 10)
                                 (projects . 7))
    ;; True if the home buffer should respond to resize events.
    dotspacemacs-startup-buffer-responsive t
@@ -157,12 +163,12 @@ values."
    dotspacemacs-colorize-cursor-according-to-state t
    ;; Default font, or prioritized list of fonts. `powerline-scale' allows to
    ;; quickly tweak the mode-line size to make separators look not too crappy.
-   dotspacemacs-default-font '("Source Code Pro"
-                               :size 13
-                               :weight normal
+   dotspacemacs-default-font '("Ubuntu Mono"
+                               :size 15
+                               :weight medium
                                ;; :style normal
                                :width normal
-                               :powerline-scale 0.8)
+                               :powerline-scale 1.1)
    ;; The leader key
    dotspacemacs-leader-key "SPC"
    ;; The leader key accessible in `emacs state' and `insert state'
@@ -202,7 +208,7 @@ values."
    dotspacemacs-display-default-layout nil
    ;; If non nil then the last auto saved layouts are resume automatically upon
    ;; start. (default nil)
-   dotspacemacs-auto-resume-layouts nil
+   dotspacemacs-auto-resume-layouts t
    ;; Size (in MB) above which spacemacs will prompt to open the large file
    ;; literally to avoid performance issues. Opening a file literally means that
    ;; no major mode or minor modes are active. (default is 1)
@@ -327,6 +333,10 @@ you should place your code here."
   ;; custom commands ===============================================================================
   ;; ===============================================================================================
 
+  ;; powerline separator ===========================================================================
+  (setq powerline-default-separator 'nil)
+  ;; ===============================================================================================
+
   (fa-config-default)
   ;; (load-file "~/.emacs.d/sublimity/sublimity.el")
   ;; (load-file "~/.emacs.d/sublimity/sublimity-scroll.el")
@@ -348,6 +358,7 @@ you should place your code here."
   ;; fix the emacs lisp backends so that the stupid capf is not available
   (setq company-backends-emacs-lisp-mode '((company-elisp company-dabbrev-code company-keywords company-gtags company-etags)))
 
+  (setq company-backends-c-mode-common '((company-dabbrev company-dabbrev-code company-keywords) (company-semantic) (company-etags company-gtags)))
   ;; make sure which key is on and using the minibuffer
   (which-key-mode t)
   (which-key-setup-minibuffer)
@@ -365,13 +376,13 @@ you should place your code here."
   ;; add some modes to c-mode
   (add-hook 'c-mode-hook 'ggtags-mode)
   (add-hook 'c-mode-hook 'cscope-minor-mode)
-  (with-eval-after-load 'cc-mode (spacemacs|define-jump-handlers 'ccmode 'ggtags-find-tag-dwim))
+  (with-eval-after-load 'cc-mode (spacemacs|define-jump-handlers 'cc-mode 'semantic-ia-fast-jump))
   ;; useful shortcuts for ggtags, since they are not enabled by default.
   (with-eval-after-load 'cc-mode (evil-define-key 'normal c-mode-map "gd"  'ggtags-find-tag-dwim))
   (with-eval-after-load 'cc-mode (evil-define-key 'normal c-mode-map "gb"  'ggtags-prev-mark))
   (with-eval-after-load 'cc-mode (evil-define-key 'normal c-mode-map "gG"  'ggtags-show-definition))
   (with-eval-after-load 'cc-mode (evil-define-key 'normal c-mode-map "gr"  'ggtags-update-tags))
-  (with-eval-after-load 'cc-mode (evil-define-key 'normal c-mode-map "gs"  'helm-gtags-find-rtag))
+  (with-eval-after-load 'cc-mode (evil-define-key 'normal c-mode-map "gs"  'ggtags-find-other-symbol))
   (with-eval-after-load 'cc-mode (define-key c-mode-map (kbd "C-c x")  'company-other-backend))
   (with-eval-after-load 'cc-mode (define-key c-mode-map (kbd "C-c d")  'semantic-ia-show-doc))
   (with-eval-after-load 'cc-mode (define-key c-mode-map (kbd "C-c , f")  'senator-fold-tag-toggle))
@@ -440,8 +451,7 @@ Version 2017-01-27"
   (ivy-set-actions
    t
    '(("i" ivy-copy-to-buffer-action "insert")
-     ("y" ivy-yank-action "yank")
-     ("k" ivy-kill-line "kill-line")))
+     ("y" ivy-yank-action "yank")))
   ;; ===============================================================================================
 
   ;; AVY modifications =============================================================================
@@ -466,6 +476,7 @@ Version 2017-01-27"
 (with-eval-after-load 'darkokai-theme (set-background-color "gray5"))
 
 
+
 ;; Do not write anything past this comment. This is where Emacs will
 ;; auto-generate custom variable definitions.
 (custom-set-variables
@@ -481,28 +492,26 @@ Version 2017-01-27"
      company-semantic company-files
      (company-gtags company-etags)
      company-dabbrev company-bbdb company-nxml company-css company-clang company-cmake company-oddmuse)))
- '(compilation-message-face (quote default))
+ '(company-dabbrev-downcase nil)
+ '(company-dabbrev-ignore-case nil)
+ '(company-gtags-modes (quote (prog-mode c-mode jde-mode)))
+ '(company-idle-delay 0.2)
+ '(company-minimum-prefix-length 2)
+ '(company-require-match nil)
+ '(company-transformers
+   (quote
+    (spacemacs//company-transformer-cancel company-sort-by-occurrence)))
  '(custom-safe-themes
    (quote
-    ("bffa9739ce0752a37d9b1eee78fc00ba159748f50dc328af4be661484848e476" default)))
+    ("70403e220d6d7100bae7775b3334eddeb340ba9c37f4b39c189c2c29d458543b" "bffa9739ce0752a37d9b1eee78fc00ba159748f50dc328af4be661484848e476" default)))
+ '(darkokai-distinct-fringe-background nil)
+ '(darkokai-high-contrast-mode-line nil)
+ '(darkokai-mode-line-padding 1)
  '(evil-want-Y-yank-to-eol nil)
- '(fci-rule-color "#2e2e2e" t)
  '(fill-column 100)
  '(frame-background-mode (quote dark))
  '(global-semantic-idle-summary-mode nil)
  '(global-semantic-stickyfunc-mode nil)
- '(highlight-changes-colors (quote ("#FD5FF0" "#AE81FF")))
- '(highlight-tail-colors
-   (quote
-    (("#3C3D37" . 0)
-     ("#679A01" . 20)
-     ("#4BBEAE" . 30)
-     ("#1DB4D0" . 50)
-     ("#9A8F21" . 60)
-     ("#A75B00" . 70)
-     ("#F309DF" . 85)
-     ("#3C3D37" . 100))))
- '(magit-diff-use-overlays nil)
  '(markdown-command "Markdown.pl")
  '(nrepl-message-colors
    (quote
@@ -510,42 +519,23 @@ Version 2017-01-27"
  '(org-agenda-files (quote ("~/org/vest_charger.org")))
  '(package-selected-packages
    (quote
-    (disaster company-c-headers cmake-mode clang-format imenu-list zenburn-theme zen-and-art-theme underwater-theme ujelly-theme twilight-theme twilight-bright-theme twilight-anti-bright-theme tronesque-theme toxi-theme tao-theme tangotango-theme tango-plus-theme tango-2-theme sunny-day-theme subatomic256-theme subatomic-theme spacegray-theme soothe-theme soft-morning-theme soft-charcoal-theme smyx-theme reverse-theme railscasts-theme purple-haze-theme planet-theme phoenix-dark-pink-theme phoenix-dark-mono-theme pastels-on-dark-theme organic-green-theme omtose-phellack-theme oldlace-theme occidental-theme obsidian-theme noctilux-theme niflheim-theme naquadah-theme mustang-theme monochrome-theme moe-theme minimal-theme majapahit-theme lush-theme jbeans-theme jazz-theme ir-black-theme inkpot-theme heroku-theme hemisu-theme hc-zenburn-theme gruvbox-theme gruber-darker-theme grandshell-theme gotham-theme gandalf-theme flatui-theme flatland-theme firebelly-theme farmhouse-theme espresso-theme dracula-theme django-theme darktooth-theme autothemer darkokai-theme darkmine-theme darkburn-theme dakrone-theme cyberpunk-theme color-theme-sanityinc-tomorrow color-theme-sanityinc-solarized clues-theme cherry-blossom-theme busybee-theme bubbleberry-theme birds-of-paradise-plus-theme badwolf-theme apropospriate-theme anti-zenburn-theme ample-zen-theme afternoon-theme ein websocket web-beautify livid-mode skewer-mode simple-httpd json-mode json-snatcher json-reformat js2-refactor multiple-cursors js2-mode js-doc company-tern dash-functional tern coffee-mode material-theme molokai-theme seti-theme ample-theme ample-zenburn-theme xterm-color shell-pop multi-term eshell-z eshell-prompt-extras esh-help wgrep smex ivy-hydra counsel-projectile counsel soft-stone-theme alect-themes professional-theme light-soap-theme solarized-theme web-mode tagedit slim-mode scss-mode sass-mode pug-mode less-css-mode helm-css-scss haml-mode emmet-mode company-web web-completion-data csv-mode hide-comnt sublime-themes zonokai-theme stickyfunc-enhance srefactor company-quickhelp pos-tip function-args swiper ivy helm-cscope xcscope helm-gtags ggtags sublimity yapfify pyvenv pytest pyenv-mode py-isort pip-requirements live-py-mode hy-mode helm-pydoc cython-mode company-anaconda anaconda-mode pythonic smeargle orgit org-projectile org-present org org-pomodoro alert log4e gntp org-download mwim mmm-mode markdown-toc markdown-mode magit-gitflow htmlize helm-gitignore helm-company helm-c-yasnippet gnuplot gitignore-mode gitconfig-mode gitattributes-mode git-timemachine git-messenger git-link gh-md evil-magit magit magit-popup git-commit with-editor company-statistics company auto-yasnippet yasnippet ac-ispell auto-complete paradox ws-butler window-numbering which-key volatile-highlights vi-tilde-fringe uuidgen use-package toc-org spaceline powerline restart-emacs request rainbow-delimiters popwin persp-mode pcre2el spinner org-plus-contrib org-bullets open-junk-file neotree move-text macrostep lorem-ipsum linum-relative link-hint info+ indent-guide ido-vertical-mode hydra hungry-delete hl-todo highlight-parentheses highlight-numbers parent-mode highlight-indentation help-fns+ helm-themes helm-swoop helm-projectile helm-mode-manager helm-make projectile pkg-info epl helm-flx helm-descbinds helm-ag google-translate golden-ratio flx-ido flx fill-column-indicator fancy-battery eyebrowse expand-region exec-path-from-shell evil-visualstar evil-visual-mark-mode evil-unimpaired evil-tutor evil-surround evil-search-highlight-persist evil-numbers evil-nerd-commenter evil-mc evil-matchit evil-lisp-state smartparens evil-indent-plus evil-iedit-state iedit evil-exchange evil-escape evil-ediff evil-args evil-anzu anzu evil goto-chg undo-tree eval-sexp-fu highlight elisp-slime-nav dumb-jump f s diminish define-word column-enforce-mode clean-aindent-mode bind-map bind-key auto-highlight-symbol auto-compile packed dash aggressive-indent adaptive-wrap ace-window ace-link ace-jump-helm-line helm avy helm-core popup async quelpa package-build spacemacs-theme)))
- '(pos-tip-background-color "#A6E22E")
- '(pos-tip-foreground-color "#272822")
+    (phpunit phpcbf php-extras php-auto-yasnippets drupal-mode php-mode evil-snipe flycheck-pos-tip flycheck pandoc-mode ox-pandoc ht disaster company-c-headers cmake-mode clang-format imenu-list zenburn-theme zen-and-art-theme underwater-theme ujelly-theme twilight-theme twilight-bright-theme twilight-anti-bright-theme tronesque-theme toxi-theme tao-theme tangotango-theme tango-plus-theme tango-2-theme sunny-day-theme subatomic256-theme subatomic-theme spacegray-theme soothe-theme soft-morning-theme soft-charcoal-theme smyx-theme reverse-theme railscasts-theme purple-haze-theme planet-theme phoenix-dark-pink-theme phoenix-dark-mono-theme pastels-on-dark-theme organic-green-theme omtose-phellack-theme oldlace-theme occidental-theme obsidian-theme noctilux-theme niflheim-theme naquadah-theme mustang-theme monochrome-theme moe-theme minimal-theme majapahit-theme lush-theme jbeans-theme jazz-theme ir-black-theme inkpot-theme heroku-theme hemisu-theme hc-zenburn-theme gruvbox-theme gruber-darker-theme grandshell-theme gotham-theme gandalf-theme flatui-theme flatland-theme firebelly-theme farmhouse-theme espresso-theme dracula-theme django-theme darktooth-theme autothemer darkokai-theme darkmine-theme darkburn-theme dakrone-theme cyberpunk-theme color-theme-sanityinc-tomorrow color-theme-sanityinc-solarized clues-theme cherry-blossom-theme busybee-theme bubbleberry-theme birds-of-paradise-plus-theme badwolf-theme apropospriate-theme anti-zenburn-theme ample-zen-theme afternoon-theme ein websocket web-beautify livid-mode skewer-mode simple-httpd json-mode json-snatcher json-reformat js2-refactor multiple-cursors js2-mode js-doc company-tern dash-functional tern coffee-mode material-theme molokai-theme seti-theme ample-theme ample-zenburn-theme xterm-color shell-pop multi-term eshell-z eshell-prompt-extras esh-help wgrep smex ivy-hydra counsel-projectile counsel soft-stone-theme alect-themes professional-theme light-soap-theme solarized-theme web-mode tagedit slim-mode scss-mode sass-mode pug-mode less-css-mode helm-css-scss haml-mode emmet-mode company-web web-completion-data csv-mode hide-comnt sublime-themes zonokai-theme stickyfunc-enhance srefactor company-quickhelp pos-tip function-args swiper ivy helm-cscope xcscope helm-gtags ggtags sublimity yapfify pyvenv pytest pyenv-mode py-isort pip-requirements live-py-mode hy-mode helm-pydoc cython-mode company-anaconda anaconda-mode pythonic smeargle orgit org-projectile org-present org org-pomodoro alert log4e gntp org-download mwim mmm-mode markdown-toc markdown-mode magit-gitflow htmlize helm-gitignore helm-company helm-c-yasnippet gnuplot gitignore-mode gitconfig-mode gitattributes-mode git-timemachine git-messenger git-link gh-md evil-magit magit magit-popup git-commit with-editor company-statistics company auto-yasnippet yasnippet ac-ispell auto-complete paradox ws-butler window-numbering which-key volatile-highlights vi-tilde-fringe uuidgen use-package toc-org spaceline powerline restart-emacs request rainbow-delimiters popwin persp-mode pcre2el spinner org-plus-contrib org-bullets open-junk-file neotree move-text macrostep lorem-ipsum linum-relative link-hint info+ indent-guide ido-vertical-mode hydra hungry-delete hl-todo highlight-parentheses highlight-numbers parent-mode highlight-indentation help-fns+ helm-themes helm-swoop helm-projectile helm-mode-manager helm-make projectile pkg-info epl helm-flx helm-descbinds helm-ag google-translate golden-ratio flx-ido flx fill-column-indicator fancy-battery eyebrowse expand-region exec-path-from-shell evil-visualstar evil-visual-mark-mode evil-unimpaired evil-tutor evil-surround evil-search-highlight-persist evil-numbers evil-nerd-commenter evil-mc evil-matchit evil-lisp-state smartparens evil-indent-plus evil-iedit-state iedit evil-exchange evil-escape evil-ediff evil-args evil-anzu anzu evil goto-chg undo-tree eval-sexp-fu highlight elisp-slime-nav dumb-jump f s diminish define-word column-enforce-mode clean-aindent-mode bind-map bind-key auto-highlight-symbol auto-compile packed dash aggressive-indent adaptive-wrap ace-window ace-link ace-jump-helm-line helm avy helm-core popup async quelpa package-build spacemacs-theme)))
  '(safe-local-variable-values
    (quote
-    ((projectile-project-compilation-dir quote /pca10040/blank/armgcc)
+    ((eval progn
+           (require
+            (quote projectile))
+           (puthash
+            (projectile-project-root)
+            "make -C /home/brendanz/microchip/harmony/v1_08_01/apps/tcpip/od_charger_wifi/firmware/wifi_easy_configuration.X --file=nbproject/Makefile-pic32mz_ef_sk__ioexp__freertos.mk" projectile-compilation-cmd-map))
+     (projectile-project-compilation-dir quote /pca10040/blank/armgcc)
      (projectile-project-compilation-dir . pca10040/blank/armgcc)
      (projectile-project-compilation-dir \./pca10040/blank/armgcc)
      (projectile-project-name . smartvalve_simulator))))
  '(semantic-imenu-bucketize-file t)
  '(semantic-imenu-bucketize-type-members t)
- '(semantic-imenu-summary-function (quote semantic-format-tag-name))
- '(vc-annotate-background "#3b3b3b")
- '(vc-annotate-color-map
-   (quote
-    ((20 . "#dd5542")
-     (40 . "#CC5542")
-     (60 . "#fb8512")
-     (80 . "#baba36")
-     (100 . "#bdbc61")
-     (120 . "#7d7c61")
-     (140 . "#6abd50")
-     (160 . "#6aaf50")
-     (180 . "#6aa350")
-     (200 . "#6a9550")
-     (220 . "#6a8550")
-     (240 . "#6a7550")
-     (260 . "#9b55c3")
-     (280 . "#6CA0A3")
-     (300 . "#528fd1")
-     (320 . "#5180b3")
-     (340 . "#6380b3")
-     (360 . "#DC8CC3"))))
- '(vc-annotate-very-old-color "#DC8CC3")
- '(weechat-color-list
-   (unspecified "#272822" "#3C3D37" "#F70057" "#F92672" "#86C30D" "#A6E22E" "#BEB244" "#E6DB74" "#40CAE4" "#66D9EF" "#FB35EA" "#FD5FF0" "#74DBCD" "#A1EFE4" "#F8F8F2" "#F8F8F0"))
+ '(semantic-imenu-summary-function (quote semantic-format-tag-prototype))
+ '(x-underline-at-descent-line t)
  '(xterm-color-names
    ["#303030" "#D66F84" "#D79887" "#D49A8A" "#94B1A3" "#A8938C" "#989584" "#BAB2A9"])
  '(xterm-color-names-bright
@@ -555,4 +545,6 @@ Version 2017-01-27"
  ;; If you edit it by hand, you could mess it up, so be careful.
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
- )
+ '(company-echo-common ((t (:foreground "forest green"))))
+ '(highlight ((t (:background "#454545" :foreground "#ffffff" :underline nil))))
+ '(underline ((t (:underline t)))))
