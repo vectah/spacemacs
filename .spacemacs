@@ -42,7 +42,7 @@ values."
      ;; ----------------------------------------------------------------
      ;; helm
      (ivy :variables
-          ivy-initial-inputs-alist nil)
+           ivy-initial-inputs-alist nil)
      (evil-snipe :variables
                  evil-snipe-enable-alternate-f-and-t-behaivors t
                  evil-snipe-override-local-mode t)
@@ -52,6 +52,8 @@ values."
                        ;; auto-completion-enable-sort-by-usage t
                        ;; auto-completion-enable-help-tooltip t)
      better-defaults
+     search-engine
+     colors
      pandoc
      themes-megapack
      emacs-lisp
@@ -160,14 +162,14 @@ values."
                          spacemacs-light)
 
    ;; If non nil the cursor color matches the state color in GUI Emacs.
-   dotspacemacs-colorize-cursor-according-to-state t
+   dotspacemacs-colorize-cursor-according-to-state nil
    ;; Default font, or prioritized list of fonts. `powerline-scale' allows to
    ;; quickly tweak the mode-line size to make separators look not too crappy.
-   dotspacemacs-default-font '("Ubuntu Mono"
-                               :size 15
-                               :weight medium
+   dotspacemacs-default-font '("Source Code Pro"
+                               :size 13
+                               ;; :weight medium
                                ;; :style normal
-                               :width normal
+                               :width narrow
                                :powerline-scale 1.1)
    ;; The leader key
    dotspacemacs-leader-key "SPC"
@@ -208,7 +210,7 @@ values."
    dotspacemacs-display-default-layout nil
    ;; If non nil then the last auto saved layouts are resume automatically upon
    ;; start. (default nil)
-   dotspacemacs-auto-resume-layouts t
+   dotspacemacs-auto-resume-layouts nil
    ;; Size (in MB) above which spacemacs will prompt to open the large file
    ;; literally to avoid performance issues. Opening a file literally means that
    ;; no major mode or minor modes are active. (default is 1)
@@ -346,6 +348,16 @@ you should place your code here."
         ;; sublimity-scroll-drift-length 10)
   ;; (require 'doxymacs)
 
+  ;; a function to load my own notes file
+  (defun load-notes ()
+    (interactive)
+    (find-file "~/org/notes.org"))
+
+  ;; I don't want to highlight the current line
+  ;; I want the cursor to blink, damn it
+  (blink-cursor-mode t)
+  (global-hl-line-mode 0)
+
   ;; this stupid mode indents when I do not want indents
   (electric-indent-mode nil)
 
@@ -355,8 +367,19 @@ you should place your code here."
 
   (global-company-mode t)
 
+  ;; customize the mode line - get rid of version control info - too much space
+  (setq spaceline-version-control-p 'nil)
+
+  ;; parsing #ifs in some files causes issues so disable globally
+  ;; usually the problem is when a flag defined in a makefile is used to
+  ;; disable an entire file
+  (setq semantic-c-obey-conditional-section-parsing-flag 'nil)
+
   ;; fix the emacs lisp backends so that the stupid capf is not available
   (setq company-backends-emacs-lisp-mode '((company-elisp company-dabbrev-code company-keywords company-gtags company-etags)))
+
+  ;; set the org mode backends
+  (setq company-backends-org-mode '((company-dabbrev company-files) (company-keywords company-dabbrev-code)))
 
   (setq company-backends-c-mode-common '((company-dabbrev company-dabbrev-code company-keywords) (company-semantic) (company-etags company-gtags)))
   ;; make sure which key is on and using the minibuffer
@@ -388,27 +411,27 @@ you should place your code here."
   (with-eval-after-load 'cc-mode (define-key c-mode-map (kbd "C-c , f")  'senator-fold-tag-toggle))
 
 ;; custom commands =================================================================================
-(defun xah-copy-file-path (&optional *dir-path-only-p)
-  "Copy the current buffer's file path or dired path to `kill-ring'.
-Result is full path.
-If `universal-argument' is called first, copy only the dir path.
-URL `http://ergoemacs.org/emacs/emacs_copy_file_path.html'
-Version 2017-01-27"
-  (interactive "P")
-  (let ((-fpath
-         (if (equal major-mode 'dired-mode)
-             (expand-file-name default-directory)
-           (if (buffer-file-name)
-               (buffer-file-name)
-             (user-error "Current buffer is not associated with a file.")))))
-    (kill-new
-     (if *dir-path-only-p
+  (defun copy-file-path (&optional *dir-path-only-p)
+    "Copy the current buffer's file path or dired path to `kill-ring'.
+     Result is full path.
+     If `universal-argument' is called first, copy only the dir path.
+     URL `http://ergoemacs.org/emacs/emacs_copy_file_path.html'
+     Version 2017-01-27"
+    (interactive "P")
+    (let ((-fpath
+           (if (equal major-mode 'dired-mode)
+               (expand-file-name default-directory)
+             (if (buffer-file-name)
+                 (buffer-file-name)
+               (user-error "Current buffer is not associated with a file.")))))
+      (kill-new
+       (if *dir-path-only-p
+           (progn
+             (message "Directory path copied: 「%s」" (file-name-directory -fpath))
+             (file-name-directory -fpath))
          (progn
-           (message "Directory path copied: 「%s」" (file-name-directory -fpath))
-           (file-name-directory -fpath))
-       (progn
-         (message "File path copied: 「%s」" -fpath)
-         -fpath )))))
+           (message "File path copied: 「%s」" -fpath)
+           -fpath )))))
 ;; =================================================================================================
 
 ;; MACROS ========================================================================================
@@ -424,23 +447,20 @@ Version 2017-01-27"
   (fset 'add-semicolon
    [?A ?\; escape])
 
-  (fset 'battery_stat_insert_macro
-   [?y ?y ?  ?w ?o ?  ?4 ?p ?  ?w ?o down down down down ?2 ?y ?y ?  ?w ?o ?  ?5 ?p ?0 ?i ?  ?  ?  ?  escape ?j ?A ?, escape ?  ?w ?o down down down down down ?y ?y ?  ?w ?o ?  ?6 ?p ?A ?, escape ?  ?w ?o down ?y ?y ?  ?w ?o ?  ?7 ?p ?A ?\; escape ?  ?w ?o down down down down ?4 ?y ?y ?  ?w ?o ?  ?3 ?p ?\C-i down ?\C-i down ?\C-i down ?\C-i ?  ?w ?o down down down down ?y ?y ?  ?w ?o ?  ?1 ?p ?\C-i ?  ?w ?o down down down down ?y ?y ?  ?w ?o ?  ?2 ?p ?\C-i ?  ?w ?o])
-
-  (fset 'comment_batt_stat
-   [?g ?c ?c up ?g ?c ?c up ?g ?c ?c up ?g ?c ?c up ?  ?2 ?g ?c ?c up ?  ?1 ?g ?c ?c up ?  ?4 ?g ?c ?c up ?  ?5 ?g ?c ?c up up ?  ?6 ?g ?c ?c up ?  ?7 ?g ?c ?c up ?  ?3])
-
-
+  ;; various custom keybindings
   (spacemacs/set-leader-keys "o," 'split-at-next-comma)
   (spacemacs/set-leader-keys "opw" 'paste-over-word)
   (spacemacs/set-leader-keys "opo" 'paste-over-remain-word)
   (spacemacs/set-leader-keys "o;" 'add-semicolon)
-  (spacemacs/set-leader-keys "ocd" 'xah-copy-file-path)
+  (spacemacs/set-leader-keys "ocd" 'copy-file-path)
+  (spacemacs/set-leader-keys "oip" 'ivy-push-view)
+  (spacemacs/set-leader-keys "oid" 'ivy-pop-view)
+  (spacemacs/set-leader-keys "on" 'load-notes)
 
 
 ;; ===============================================================================================
 
-;; IVY modifications =============================================================================
+  ;; IVY modifications =============================================================================
   (defun ivy-copy-to-buffer-action (x)
     (with-ivy-window
       (insert x)))
@@ -516,13 +536,23 @@ Version 2017-01-27"
  '(nrepl-message-colors
    (quote
     ("#CC9393" "#DFAF8F" "#F0DFAF" "#7F9F7F" "#BFEBBF" "#93E0E3" "#94BFF3" "#DC8CC3")))
- '(org-agenda-files (quote ("~/org/vest_charger.org")))
+ '(org-agenda-files
+   (quote
+    ("~/projects/vest_gun_docs/vest_gun.org" "~/org/vest_charger.org")))
  '(package-selected-packages
    (quote
-    (phpunit phpcbf php-extras php-auto-yasnippets drupal-mode php-mode evil-snipe flycheck-pos-tip flycheck pandoc-mode ox-pandoc ht disaster company-c-headers cmake-mode clang-format imenu-list zenburn-theme zen-and-art-theme underwater-theme ujelly-theme twilight-theme twilight-bright-theme twilight-anti-bright-theme tronesque-theme toxi-theme tao-theme tangotango-theme tango-plus-theme tango-2-theme sunny-day-theme subatomic256-theme subatomic-theme spacegray-theme soothe-theme soft-morning-theme soft-charcoal-theme smyx-theme reverse-theme railscasts-theme purple-haze-theme planet-theme phoenix-dark-pink-theme phoenix-dark-mono-theme pastels-on-dark-theme organic-green-theme omtose-phellack-theme oldlace-theme occidental-theme obsidian-theme noctilux-theme niflheim-theme naquadah-theme mustang-theme monochrome-theme moe-theme minimal-theme majapahit-theme lush-theme jbeans-theme jazz-theme ir-black-theme inkpot-theme heroku-theme hemisu-theme hc-zenburn-theme gruvbox-theme gruber-darker-theme grandshell-theme gotham-theme gandalf-theme flatui-theme flatland-theme firebelly-theme farmhouse-theme espresso-theme dracula-theme django-theme darktooth-theme autothemer darkokai-theme darkmine-theme darkburn-theme dakrone-theme cyberpunk-theme color-theme-sanityinc-tomorrow color-theme-sanityinc-solarized clues-theme cherry-blossom-theme busybee-theme bubbleberry-theme birds-of-paradise-plus-theme badwolf-theme apropospriate-theme anti-zenburn-theme ample-zen-theme afternoon-theme ein websocket web-beautify livid-mode skewer-mode simple-httpd json-mode json-snatcher json-reformat js2-refactor multiple-cursors js2-mode js-doc company-tern dash-functional tern coffee-mode material-theme molokai-theme seti-theme ample-theme ample-zenburn-theme xterm-color shell-pop multi-term eshell-z eshell-prompt-extras esh-help wgrep smex ivy-hydra counsel-projectile counsel soft-stone-theme alect-themes professional-theme light-soap-theme solarized-theme web-mode tagedit slim-mode scss-mode sass-mode pug-mode less-css-mode helm-css-scss haml-mode emmet-mode company-web web-completion-data csv-mode hide-comnt sublime-themes zonokai-theme stickyfunc-enhance srefactor company-quickhelp pos-tip function-args swiper ivy helm-cscope xcscope helm-gtags ggtags sublimity yapfify pyvenv pytest pyenv-mode py-isort pip-requirements live-py-mode hy-mode helm-pydoc cython-mode company-anaconda anaconda-mode pythonic smeargle orgit org-projectile org-present org org-pomodoro alert log4e gntp org-download mwim mmm-mode markdown-toc markdown-mode magit-gitflow htmlize helm-gitignore helm-company helm-c-yasnippet gnuplot gitignore-mode gitconfig-mode gitattributes-mode git-timemachine git-messenger git-link gh-md evil-magit magit magit-popup git-commit with-editor company-statistics company auto-yasnippet yasnippet ac-ispell auto-complete paradox ws-butler window-numbering which-key volatile-highlights vi-tilde-fringe uuidgen use-package toc-org spaceline powerline restart-emacs request rainbow-delimiters popwin persp-mode pcre2el spinner org-plus-contrib org-bullets open-junk-file neotree move-text macrostep lorem-ipsum linum-relative link-hint info+ indent-guide ido-vertical-mode hydra hungry-delete hl-todo highlight-parentheses highlight-numbers parent-mode highlight-indentation help-fns+ helm-themes helm-swoop helm-projectile helm-mode-manager helm-make projectile pkg-info epl helm-flx helm-descbinds helm-ag google-translate golden-ratio flx-ido flx fill-column-indicator fancy-battery eyebrowse expand-region exec-path-from-shell evil-visualstar evil-visual-mark-mode evil-unimpaired evil-tutor evil-surround evil-search-highlight-persist evil-numbers evil-nerd-commenter evil-mc evil-matchit evil-lisp-state smartparens evil-indent-plus evil-iedit-state iedit evil-exchange evil-escape evil-ediff evil-args evil-anzu anzu evil goto-chg undo-tree eval-sexp-fu highlight elisp-slime-nav dumb-jump f s diminish define-word column-enforce-mode clean-aindent-mode bind-map bind-key auto-highlight-symbol auto-compile packed dash aggressive-indent adaptive-wrap ace-window ace-link ace-jump-helm-line helm avy helm-core popup async quelpa package-build spacemacs-theme)))
+    (rainbow-mode rainbow-identifiers engine-mode color-identifiers-mode monokai-theme phpunit phpcbf php-extras php-auto-yasnippets drupal-mode php-mode evil-snipe flycheck-pos-tip flycheck pandoc-mode ox-pandoc ht disaster company-c-headers cmake-mode clang-format imenu-list zenburn-theme zen-and-art-theme underwater-theme ujelly-theme twilight-theme twilight-bright-theme twilight-anti-bright-theme tronesque-theme toxi-theme tao-theme tangotango-theme tango-plus-theme tango-2-theme sunny-day-theme subatomic256-theme subatomic-theme spacegray-theme soothe-theme soft-morning-theme soft-charcoal-theme smyx-theme reverse-theme railscasts-theme purple-haze-theme planet-theme phoenix-dark-pink-theme phoenix-dark-mono-theme pastels-on-dark-theme organic-green-theme omtose-phellack-theme oldlace-theme occidental-theme obsidian-theme noctilux-theme niflheim-theme naquadah-theme mustang-theme monochrome-theme moe-theme minimal-theme majapahit-theme lush-theme jbeans-theme jazz-theme ir-black-theme inkpot-theme heroku-theme hemisu-theme hc-zenburn-theme gruvbox-theme gruber-darker-theme grandshell-theme gotham-theme gandalf-theme flatui-theme flatland-theme firebelly-theme farmhouse-theme espresso-theme dracula-theme django-theme darktooth-theme autothemer darkokai-theme darkmine-theme darkburn-theme dakrone-theme cyberpunk-theme color-theme-sanityinc-tomorrow color-theme-sanityinc-solarized clues-theme cherry-blossom-theme busybee-theme bubbleberry-theme birds-of-paradise-plus-theme badwolf-theme apropospriate-theme anti-zenburn-theme ample-zen-theme afternoon-theme ein websocket web-beautify livid-mode skewer-mode simple-httpd json-mode json-snatcher json-reformat js2-refactor multiple-cursors js2-mode js-doc company-tern dash-functional tern coffee-mode material-theme molokai-theme seti-theme ample-theme ample-zenburn-theme xterm-color shell-pop multi-term eshell-z eshell-prompt-extras esh-help wgrep smex ivy-hydra counsel-projectile counsel soft-stone-theme alect-themes professional-theme light-soap-theme solarized-theme web-mode tagedit slim-mode scss-mode sass-mode pug-mode less-css-mode helm-css-scss haml-mode emmet-mode company-web web-completion-data csv-mode hide-comnt sublime-themes zonokai-theme stickyfunc-enhance srefactor company-quickhelp pos-tip function-args swiper ivy helm-cscope xcscope helm-gtags ggtags sublimity yapfify pyvenv pytest pyenv-mode py-isort pip-requirements live-py-mode hy-mode helm-pydoc cython-mode company-anaconda anaconda-mode pythonic smeargle orgit org-projectile org-present org org-pomodoro alert log4e gntp org-download mwim mmm-mode markdown-toc markdown-mode magit-gitflow htmlize helm-gitignore helm-company helm-c-yasnippet gnuplot gitignore-mode gitconfig-mode gitattributes-mode git-timemachine git-messenger git-link gh-md evil-magit magit magit-popup git-commit with-editor company-statistics company auto-yasnippet yasnippet ac-ispell auto-complete paradox ws-butler window-numbering which-key volatile-highlights vi-tilde-fringe uuidgen use-package toc-org spaceline powerline restart-emacs request rainbow-delimiters popwin persp-mode pcre2el spinner org-plus-contrib org-bullets open-junk-file neotree move-text macrostep lorem-ipsum linum-relative link-hint info+ indent-guide ido-vertical-mode hydra hungry-delete hl-todo highlight-parentheses highlight-numbers parent-mode highlight-indentation help-fns+ helm-themes helm-swoop helm-projectile helm-mode-manager helm-make projectile pkg-info epl helm-flx helm-descbinds helm-ag google-translate golden-ratio flx-ido flx fill-column-indicator fancy-battery eyebrowse expand-region exec-path-from-shell evil-visualstar evil-visual-mark-mode evil-unimpaired evil-tutor evil-surround evil-search-highlight-persist evil-numbers evil-nerd-commenter evil-mc evil-matchit evil-lisp-state smartparens evil-indent-plus evil-iedit-state iedit evil-exchange evil-escape evil-ediff evil-args evil-anzu anzu evil goto-chg undo-tree eval-sexp-fu highlight elisp-slime-nav dumb-jump f s diminish define-word column-enforce-mode clean-aindent-mode bind-map bind-key auto-highlight-symbol auto-compile packed dash aggressive-indent adaptive-wrap ace-window ace-link ace-jump-helm-line helm avy helm-core popup async quelpa package-build spacemacs-theme)))
  '(safe-local-variable-values
    (quote
-    ((eval progn
+    ((c-basic-style . "k&r")
+     (semantic-c-obey-conditional-section-parsing-flag)
+     (eval progn
+           (require
+            (quote projectile))
+           (puthash
+            (projectile-project-root)
+            "make -C /home/brendanz/microchip/harmony/v1_08_01/apps/tcpip/od_charger_wifi/firmware/VoidVestCharger.X --file=nbproject/Makefile-pic32mz_ef_sk__ioexp__freertos.mk" projectile-compilation-cmd-map))
+     (eval progn
            (require
             (quote projectile))
            (puthash
