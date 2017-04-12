@@ -1,4 +1,4 @@
-
+;; -*- mode: emacs-lisp -*-
 ;; This file is loaded by Spacemacs at startup.
 ;; It must be stored in your home directory.
 
@@ -31,36 +31,34 @@ values."
    ;; List of configuration layers to load.
    dotspacemacs-configuration-layers
    '(
-     php
-     (javascript :variables tern-command '("nodejs" "/home/brendanz/node_modules/tern/bin/tern"))
-     html
-     csv
      ;; ----------------------------------------------------------------
      ;; Example of useful layers you may want to use right away.
      ;; Uncomment some layer names and press <SPC f e R> (Vim style) or
      ;; <M-m f e R> (Emacs style) to install them.
      ;; ----------------------------------------------------------------
-     ;; helm
      (ivy :variables
-           ivy-initial-inputs-alist nil)
-     (evil-snipe :variables
-                 evil-snipe-enable-alternate-f-and-t-behaivors t
-                 evil-snipe-override-local-mode t)
+          ivy-initial-inputs-alist nil)
      auto-completion
      ;; if you want to enable the tool tip...
      ;; (auto-completion :variables
-                       ;; auto-completion-enable-sort-by-usage t
-                       ;; auto-completion-enable-help-tooltip t)
+     ;;                  auto-completion-enable-sort-by-usage t
+     ;;                  auto-completion-enable-help-tooltip t)
      better-defaults
+     emacs-lisp
+     git
+     markdown
+     org
+     (shell :variables
+            shell-default-height 30
+            shell-default-position 'bottom)
+     ;; spell-checking
+     ;; syntax-checking
+     ;; version-control
      search-engine
      colors
      pandoc
      themes-megapack
-     emacs-lisp
      imenu-list
-     git
-     markdown
-     org
      python
      (ipython-notebook :variables
                        ein:use-auto-complete t)
@@ -68,15 +66,12 @@ values."
      c-c++
      gtags
      cscope
-     syntax-checking
      html
-     javascript
-     (shell :variables
-            shell-default-height 30
-            shell-default-position 'bottom)
-     ;; spell-checking
-     ;; syntax-checking
-     ;; version-control
+     (javascript :variables
+                 tern-command '("nodejs" "/home/brendanz/node_modules/tern/bin/tern"))
+     (evil-snipe :variables
+                 evil-snipe-enable-alternate-f-and-t-behaivors t
+                 evil-snipe-override-local-mode t)
      )
    ;; List of additional packages that will be installed without being
    ;; wrapped in a layer. If you need some configuration for these
@@ -85,7 +80,7 @@ values."
    dotspacemacs-additional-packages
    '(
      function-args
-    )
+   )
    ;; A list of packages that cannot be updated.
    dotspacemacs-frozen-packages '()
    ;; A list of packages that will not be installed and loaded.
@@ -157,22 +152,24 @@ values."
    ;; List of themes, the first of the list is loaded when spacemacs starts.
    ;; Press <SPC> T n to cycle to the next theme in the list (works great
    ;; with 2 themes variants, one dark and one light)
-   dotspacemacs-themes '(darkokai
-                         spacemacs-dark
+   dotspacemacs-themes '(spacemacs-dark
                          spacemacs-light)
-
    ;; If non nil the cursor color matches the state color in GUI Emacs.
-   dotspacemacs-colorize-cursor-according-to-state nil
+   dotspacemacs-colorize-cursor-according-to-state t
    ;; Default font, or prioritized list of fonts. `powerline-scale' allows to
    ;; quickly tweak the mode-line size to make separators look not too crappy.
    dotspacemacs-default-font '("Source Code Pro"
                                :size 13
-                               ;; :weight medium
-                               ;; :style normal
-                               :width narrow
+                               :weight normal
+                               :width normal
                                :powerline-scale 1.1)
    ;; The leader key
    dotspacemacs-leader-key "SPC"
+   ;; The key used for Emacs commands (M-x) (after pressing on the leader key).
+   ;; (default "SPC")
+   dotspacemacs-emacs-command-key "SPC"
+   ;; The key used for Vim Ex commands (default ":")
+   dotspacemacs-ex-command-key ":"
    ;; The leader key accessible in `emacs state' and `insert state'
    ;; (default "M-m")
    dotspacemacs-emacs-leader-key "M-m"
@@ -180,11 +177,8 @@ values."
    ;; pressing `<leader> m`. Set it to `nil` to disable it. (default ",")
    dotspacemacs-major-mode-leader-key ","
    ;; Major mode leader key accessible in `emacs state' and `insert state'.
-   ;; (default "C-M-m)
+   ;; (default "C-M-m")
    dotspacemacs-major-mode-emacs-leader-key "C-M-m"
-   ;; The key used for Emacs commands (M-x) (after pressing on the leader key).
-   ;; (default "SPC")
-   dotspacemacs-emacs-command-key "SPC"
    ;; These variables control whether separate commands are bound in the GUI to
    ;; the key pairs C-i, TAB and C-m, RET.
    ;; Setting it to a non-nil value, allows for separate commands under <C-i>
@@ -278,8 +272,18 @@ values."
    ;; scrolling overrides the default behavior of Emacs which recenters point
    ;; when it reaches the top or bottom of the screen. (default t)
    dotspacemacs-smooth-scrolling t
-   ;; If non nil line numbers are turned on in all `prog-mode' and `text-mode'
-   ;; derivatives. If set to `relative', also turns on relative line numbers.
+   ;; Control line numbers activation.
+   ;; If set to `t' or `relative' line numbers are turned on in all `prog-mode' and
+   ;; `text-mode' derivatives. If set to `relative', line numbers are relative.
+   ;; This variable can also be set to a property list for finer control:
+   ;; '(:relative nil
+   ;;   :disabled-for-modes dired-mode
+   ;;                       doc-view-mode
+   ;;                       markdown-mode
+   ;;                       org-mode
+   ;;                       pdf-view-mode
+   ;;                       text-mode
+   ;;   :size-limit-kb 1000)
    ;; (default nil)
    dotspacemacs-line-numbers nil
    ;; Code folding method. Possible values are `evil' and `origami'.
@@ -291,7 +295,7 @@ values."
    ;; If non-nil pressing the closing parenthesis `)' key in insert mode passes
    ;; over any automatically added closing parenthesis, bracket, quote, etc…
    ;; This can be temporary disabled by pressing `C-q' before `)'. (default nil)
-   dotspacemacs-smart-closing-parenthesis t
+   dotspacemacs-smart-closing-parenthesis nil
    ;; Select a scope to highlight delimiters. Possible values are `any',
    ;; `current', `all' or `nil'. Default is `all' (highlight any scope and
    ;; emphasis the current one). (default 'all)
@@ -332,85 +336,21 @@ This is the place where most of your configurations should be done. Unless it is
 explicitly specified that a variable should be set before a package is loaded,
 you should place your code here."
 
-  ;; custom commands ===============================================================================
-  ;; ===============================================================================================
-
-  ;; powerline separator ===========================================================================
-  (setq powerline-default-separator 'nil)
-  ;; ===============================================================================================
-
-  (fa-config-default)
-  ;; (load-file "~/.emacs.d/sublimity/sublimity.el")
-  ;; (load-file "~/.emacs.d/sublimity/sublimity-scroll.el")
-  ;; (require 'sublimity)
-  ;; (require 'sublimity-scroll)
-  ;; (setq sublimity-scroll-weight 5
-        ;; sublimity-scroll-drift-length 10)
-  ;; (require 'doxymacs)
-
-  ;; a function to load my own notes file
-  (defun load-notes ()
-    (interactive)
-    (find-file "~/org/notes.org"))
-
-  ;; I don't want to highlight the current line
-  ;; I want the cursor to blink, damn it
-  (blink-cursor-mode t)
-  (global-hl-line-mode 0)
-
+  ;; misc ======================================================================
   ;; this stupid mode indents when I do not want indents
   (electric-indent-mode nil)
+  (fa-config-default)
 
-  (with-eval-after-load 'cc-mode
-    (setq c-default-style "bsd"
-          c-basic-offset 2))
-
-  (global-company-mode t)
-
-  ;; customize the mode line - get rid of version control info - too much space
-  (setq spaceline-version-control-p 'nil)
-
-  ;; parsing #ifs in some files causes issues so disable globally
-  ;; usually the problem is when a flag defined in a makefile is used to
-  ;; disable an entire file
-  (setq semantic-c-obey-conditional-section-parsing-flag 'nil)
-
-  ;; fix the emacs lisp backends so that the stupid capf is not available
-  (setq company-backends-emacs-lisp-mode '((company-elisp company-dabbrev-code company-keywords company-gtags company-etags)))
-
-  ;; set the org mode backends
-  (setq company-backends-org-mode '((company-dabbrev company-files) (company-keywords company-dabbrev-code)))
-
-  (setq company-backends-c-mode-common '((company-dabbrev company-dabbrev-code company-keywords) (company-semantic) (company-etags company-gtags)))
-  ;; make sure which key is on and using the minibuffer
-  (which-key-mode t)
-  (which-key-setup-minibuffer)
-
-  ;; modify some of the mode syntax table in order to not use _ as a word delimiter
-  ;; may want to just do underscores globally, causes more annoyance than not
+  ;; change definition of a 'word' for evil mode - remove underline
   (add-hook 'c-mode-hook #'(lambda () (modify-syntax-entry ?_ "w")))
   (add-hook 'csv-mode-hook #'(lambda () (modify-syntax-entry ?_ "w")))
   (add-hook 'python-mode-hook #'(lambda () (modify-syntax-entry ?_ "w")))
 
-  ;; turn off some of the more annoying semantic features
-  (add-hook 'semantic-mode-hook (lambda () (global-semantic-stickyfunc-mode -1)))
-  (add-hook 'semantic-mode-hook (lambda () (global-semantic-idle-summary-mode -1)))
+  ;; custom commands ===========================================================
+  (defun load-notes ()
+    (interactive)
+    (find-file "~/org/notes.org"))
 
-  ;; add some modes to c-mode
-  (add-hook 'c-mode-hook 'ggtags-mode)
-  (add-hook 'c-mode-hook 'cscope-minor-mode)
-  (with-eval-after-load 'cc-mode (spacemacs|define-jump-handlers 'cc-mode 'semantic-ia-fast-jump))
-  ;; useful shortcuts for ggtags, since they are not enabled by default.
-  (with-eval-after-load 'cc-mode (evil-define-key 'normal c-mode-map "gd"  'ggtags-find-tag-dwim))
-  (with-eval-after-load 'cc-mode (evil-define-key 'normal c-mode-map "gb"  'ggtags-prev-mark))
-  (with-eval-after-load 'cc-mode (evil-define-key 'normal c-mode-map "gG"  'ggtags-show-definition))
-  (with-eval-after-load 'cc-mode (evil-define-key 'normal c-mode-map "gr"  'ggtags-update-tags))
-  (with-eval-after-load 'cc-mode (evil-define-key 'normal c-mode-map "gs"  'ggtags-find-other-symbol))
-  (with-eval-after-load 'cc-mode (define-key c-mode-map (kbd "C-c x")  'company-other-backend))
-  (with-eval-after-load 'cc-mode (define-key c-mode-map (kbd "C-c d")  'semantic-ia-show-doc))
-  (with-eval-after-load 'cc-mode (define-key c-mode-map (kbd "C-c , f")  'senator-fold-tag-toggle))
-
-;; custom commands =================================================================================
   (defun copy-file-path (&optional *dir-path-only-p)
     "Copy the current buffer's file path or dired path to `kill-ring'.
      Result is full path.
@@ -432,22 +372,70 @@ you should place your code here."
          (progn
            (message "File path copied: 「%s」" -fpath)
            -fpath )))))
-;; =================================================================================================
 
-;; MACROS ========================================================================================
+  ;; auto-completion ===========================================================
+  ;; customize the emacs lisp auto completion to not have capf
+  (setq company-backends-emacs-lisp-mode '((company-elisp
+                                            company-dabbrev-code
+                                            company-keywords
+                                            company-gtags
+                                            company-etags)))
+
+  ;; clean up the org mode completion a bit
+  (setq company-backends-org-mode '((company-dabbrev company-files)
+                                    (company-keywords company-dabbrev-code)))
+
+
+  ;; clean up the c completions backends
+  (setq company-backends-c-mode-common '((company-dabbrev
+                                          company-dabbrev-code
+                                          company-keywords)
+                                         (company-semantic)
+                                         (company-etags
+                                          company-gtags)))
+
+  (global-company-mode t)
+
+  ;; appearance ================================================================
+  ;; set the default separator to straight lines
+  (setq powerline-default-separator 'nil)
+
+  ;; blink the cursor and turn off the line highlight
+  (blink-cursor-mode t)
+  (global-hl-line-mode 0)
+
+  ;; semantic ==================================================================
+  ;; remove annoying semantic features
+  (add-hook 'semantic-mode-hook (lambda () (global-semantic-stickyfunc-mode -1)))
+  (add-hook 'semantic-mode-hook (lambda () (global-semantic-idle-summary-mode -1)))
+
+  ;; parsing #ifs in some files causes issues so disable globally
+  ;; usually the problem is when a flag defined in a makefile is used to
+  ;; disable an entire file
+  (setq semantic-c-obey-conditional-section-parsing-flag 'nil)
+
+  ;; c mode configuration ======================================================
+  (add-hook 'c-mode-hook 'ggtags-mode)
+  (add-hook 'c-mode-hook 'cscope-minor-mode)
+
+  (with-eval-after-load 'cc-mode
+    (setq c-default-style "bsd"
+          c-basic-offset 2))
+
+  ;; MACROS ====================================================================
   (fset 'paste-over-word
-   [?c ?i ?w ?\C-r ?0 escape])
+        [?c ?i ?w ?\C-r ?0 escape])
 
   (fset 'split-at-next-comma
-   [?f ?, ?a return escape])
+        [?f ?, ?a return escape])
 
   (fset 'paste-over-remain-word
-   [?c ?w ?\C-r ?0 escape])
+        [?c ?w ?\C-r ?0 escape])
 
   (fset 'add-semicolon
-   [?A ?\; escape])
+        [?A ?\; escape])
 
-  ;; various custom keybindings
+  ;; Custom keybindings ========================================================
   (spacemacs/set-leader-keys "o," 'split-at-next-comma)
   (spacemacs/set-leader-keys "opw" 'paste-over-word)
   (spacemacs/set-leader-keys "opo" 'paste-over-remain-word)
@@ -456,9 +444,15 @@ you should place your code here."
   (spacemacs/set-leader-keys "oip" 'ivy-push-view)
   (spacemacs/set-leader-keys "oid" 'ivy-pop-view)
   (spacemacs/set-leader-keys "on" 'load-notes)
+  (spacemacs/set-leader-keys "or" 'counsel-rg)
+  (spacemacs/set-leader-keys "ogd" 'ggtags-find-tag-dwim)
+  (spacemacs/set-leader-keys "ogb" 'ggtags-prev-mark)
+  (spacemacs/set-leader-keys "ogr" 'ggtags-update-tags)
 
-
-;; ===============================================================================================
+  ;; NOTE possible conflicting keybinds
+  (with-eval-after-load 'cc-mode (define-key c-mode-map (kbd "C-c x")  'company-other-backend))
+  (with-eval-after-load 'cc-mode (define-key c-mode-map (kbd "C-c d")  'semantic-ia-show-doc))
+  (spacemacs/set-leader-keys "jy" 'avy-copy-line)
 
   ;; IVY modifications =============================================================================
   (defun ivy-copy-to-buffer-action (x)
@@ -472,30 +466,21 @@ you should place your code here."
    t
    '(("i" ivy-copy-to-buffer-action "insert")
      ("y" ivy-yank-action "yank")))
-  ;; ===============================================================================================
 
-  ;; AVY modifications =============================================================================
-  (spacemacs/set-leader-keys "jy" 'avy-copy-line)
-  ;; ===============================================================================================
-
-
+  ;; python ====================================================================
   ;; (setq python-shell-exec-path "/home/brendanz/anaconda/bin")
   (setq python-shell-interpreter "/home/brendanz/anaconda3/bin/python"
         python-shell-interpreter-args "-i")
-  )
 
-
-  ;; terminal settings
+  ;; terminal settings ===============================================================================
   ;; http://stackoverflow.com/questions/6820051/unicode-characters-in-emacs-term-mode/7442266#7442266
   (defadvice ansi-term (after advise-ansi-term-coding-system)
-      (set-buffer-process-coding-system 'utf-8-unix 'utf-8-unix))
+    (set-buffer-process-coding-system 'utf-8-unix 'utf-8-unix))
   (ad-activate 'ansi-term)
   (add-hook 'term-mode-hook 'toggle-truncate-lines)
 
-;; set our customer dark background colo
-(with-eval-after-load 'darkokai-theme (set-background-color "gray5"))
-
-
+  ;; end of user config ========================================================
+  )
 
 ;; Do not write anything past this comment. This is where Emacs will
 ;; auto-generate custom variable definitions.
@@ -504,77 +489,23 @@ you should place your code here."
  ;; If you edit it by hand, you could mess it up, so be careful.
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
- '(ansi-color-faces-vector
-   [default default default italic underline success warning error])
- '(company-backends
-   (quote
-    ((company-dabbrev company-dabbrev-code company-keywords)
-     company-semantic company-files
-     (company-gtags company-etags)
-     company-dabbrev company-bbdb company-nxml company-css company-clang company-cmake company-oddmuse)))
- '(company-dabbrev-downcase nil)
- '(company-dabbrev-ignore-case nil)
- '(company-gtags-modes (quote (prog-mode c-mode jde-mode)))
- '(company-idle-delay 0.2)
- '(company-minimum-prefix-length 2)
- '(company-require-match nil)
- '(company-transformers
-   (quote
-    (spacemacs//company-transformer-cancel company-sort-by-occurrence)))
- '(custom-safe-themes
-   (quote
-    ("70403e220d6d7100bae7775b3334eddeb340ba9c37f4b39c189c2c29d458543b" "bffa9739ce0752a37d9b1eee78fc00ba159748f50dc328af4be661484848e476" default)))
- '(darkokai-distinct-fringe-background nil)
- '(darkokai-high-contrast-mode-line nil)
- '(darkokai-mode-line-padding 1)
- '(evil-want-Y-yank-to-eol nil)
- '(fill-column 100)
- '(frame-background-mode (quote dark))
- '(global-semantic-idle-summary-mode nil)
- '(global-semantic-stickyfunc-mode nil)
- '(markdown-command "Markdown.pl")
- '(nrepl-message-colors
-   (quote
-    ("#CC9393" "#DFAF8F" "#F0DFAF" "#7F9F7F" "#BFEBBF" "#93E0E3" "#94BFF3" "#DC8CC3")))
- '(org-agenda-files
-   (quote
-    ("~/projects/vest_gun_docs/vest_gun.org" "~/org/vest_charger.org")))
+ '(org-agenda-files (quote ("~/org/vest_charger.org" "~/org/vest_gun.org")))
  '(package-selected-packages
    (quote
-    (rainbow-mode rainbow-identifiers engine-mode color-identifiers-mode monokai-theme phpunit phpcbf php-extras php-auto-yasnippets drupal-mode php-mode evil-snipe flycheck-pos-tip flycheck pandoc-mode ox-pandoc ht disaster company-c-headers cmake-mode clang-format imenu-list zenburn-theme zen-and-art-theme underwater-theme ujelly-theme twilight-theme twilight-bright-theme twilight-anti-bright-theme tronesque-theme toxi-theme tao-theme tangotango-theme tango-plus-theme tango-2-theme sunny-day-theme subatomic256-theme subatomic-theme spacegray-theme soothe-theme soft-morning-theme soft-charcoal-theme smyx-theme reverse-theme railscasts-theme purple-haze-theme planet-theme phoenix-dark-pink-theme phoenix-dark-mono-theme pastels-on-dark-theme organic-green-theme omtose-phellack-theme oldlace-theme occidental-theme obsidian-theme noctilux-theme niflheim-theme naquadah-theme mustang-theme monochrome-theme moe-theme minimal-theme majapahit-theme lush-theme jbeans-theme jazz-theme ir-black-theme inkpot-theme heroku-theme hemisu-theme hc-zenburn-theme gruvbox-theme gruber-darker-theme grandshell-theme gotham-theme gandalf-theme flatui-theme flatland-theme firebelly-theme farmhouse-theme espresso-theme dracula-theme django-theme darktooth-theme autothemer darkokai-theme darkmine-theme darkburn-theme dakrone-theme cyberpunk-theme color-theme-sanityinc-tomorrow color-theme-sanityinc-solarized clues-theme cherry-blossom-theme busybee-theme bubbleberry-theme birds-of-paradise-plus-theme badwolf-theme apropospriate-theme anti-zenburn-theme ample-zen-theme afternoon-theme ein websocket web-beautify livid-mode skewer-mode simple-httpd json-mode json-snatcher json-reformat js2-refactor multiple-cursors js2-mode js-doc company-tern dash-functional tern coffee-mode material-theme molokai-theme seti-theme ample-theme ample-zenburn-theme xterm-color shell-pop multi-term eshell-z eshell-prompt-extras esh-help wgrep smex ivy-hydra counsel-projectile counsel soft-stone-theme alect-themes professional-theme light-soap-theme solarized-theme web-mode tagedit slim-mode scss-mode sass-mode pug-mode less-css-mode helm-css-scss haml-mode emmet-mode company-web web-completion-data csv-mode hide-comnt sublime-themes zonokai-theme stickyfunc-enhance srefactor company-quickhelp pos-tip function-args swiper ivy helm-cscope xcscope helm-gtags ggtags sublimity yapfify pyvenv pytest pyenv-mode py-isort pip-requirements live-py-mode hy-mode helm-pydoc cython-mode company-anaconda anaconda-mode pythonic smeargle orgit org-projectile org-present org org-pomodoro alert log4e gntp org-download mwim mmm-mode markdown-toc markdown-mode magit-gitflow htmlize helm-gitignore helm-company helm-c-yasnippet gnuplot gitignore-mode gitconfig-mode gitattributes-mode git-timemachine git-messenger git-link gh-md evil-magit magit magit-popup git-commit with-editor company-statistics company auto-yasnippet yasnippet ac-ispell auto-complete paradox ws-butler window-numbering which-key volatile-highlights vi-tilde-fringe uuidgen use-package toc-org spaceline powerline restart-emacs request rainbow-delimiters popwin persp-mode pcre2el spinner org-plus-contrib org-bullets open-junk-file neotree move-text macrostep lorem-ipsum linum-relative link-hint info+ indent-guide ido-vertical-mode hydra hungry-delete hl-todo highlight-parentheses highlight-numbers parent-mode highlight-indentation help-fns+ helm-themes helm-swoop helm-projectile helm-mode-manager helm-make projectile pkg-info epl helm-flx helm-descbinds helm-ag google-translate golden-ratio flx-ido flx fill-column-indicator fancy-battery eyebrowse expand-region exec-path-from-shell evil-visualstar evil-visual-mark-mode evil-unimpaired evil-tutor evil-surround evil-search-highlight-persist evil-numbers evil-nerd-commenter evil-mc evil-matchit evil-lisp-state smartparens evil-indent-plus evil-iedit-state iedit evil-exchange evil-escape evil-ediff evil-args evil-anzu anzu evil goto-chg undo-tree eval-sexp-fu highlight elisp-slime-nav dumb-jump f s diminish define-word column-enforce-mode clean-aindent-mode bind-map bind-key auto-highlight-symbol auto-compile packed dash aggressive-indent adaptive-wrap ace-window ace-link ace-jump-helm-line helm avy helm-core popup async quelpa package-build spacemacs-theme)))
+    (function-args evil-snipe zonokai-theme zenburn-theme zen-and-art-theme yapfify xterm-color xcscope web-mode web-beautify unfill underwater-theme ujelly-theme twilight-theme twilight-bright-theme twilight-anti-bright-theme tronesque-theme toxi-theme tao-theme tangotango-theme tango-plus-theme tango-2-theme tagedit sunny-day-theme sublime-themes subatomic256-theme subatomic-theme stickyfunc-enhance srefactor spacegray-theme soothe-theme solarized-theme soft-stone-theme soft-morning-theme soft-charcoal-theme smyx-theme smeargle slim-mode shell-pop seti-theme scss-mode sass-mode reverse-theme rainbow-mode rainbow-identifiers railscasts-theme pyvenv pytest pyenv-mode py-isort purple-haze-theme pug-mode professional-theme planet-theme pip-requirements phoenix-dark-pink-theme phoenix-dark-mono-theme pastels-on-dark-theme pandoc-mode ox-pandoc ht orgit organic-green-theme org-projectile org-present org-pomodoro alert log4e gntp org-download omtose-phellack-theme oldlace-theme occidental-theme obsidian-theme noctilux-theme niflheim-theme naquadah-theme mwim mustang-theme multi-term monokai-theme monochrome-theme molokai-theme moe-theme mmm-mode minimal-theme material-theme markdown-toc markdown-mode majapahit-theme magit-gitflow madhat2r-theme lush-theme livid-mode skewer-mode simple-httpd live-py-mode light-soap-theme less-css-mode json-mode json-snatcher json-reformat js2-refactor multiple-cursors js2-mode js-doc jbeans-theme jazz-theme ir-black-theme inkpot-theme imenu-list hy-mode htmlize heroku-theme hemisu-theme hc-zenburn-theme haml-mode gruvbox-theme gruber-darker-theme grandshell-theme gotham-theme gnuplot gitignore-mode gitconfig-mode gitattributes-mode git-timemachine git-messenger git-link gh-md ggtags gandalf-theme fuzzy flatui-theme flatland-theme firebelly-theme farmhouse-theme evil-magit magit magit-popup git-commit with-editor espresso-theme eshell-z eshell-prompt-extras esh-help engine-mode emmet-mode ein websocket dracula-theme django-theme disaster darktooth-theme autothemer darkokai-theme darkmine-theme darkburn-theme dakrone-theme cython-mode cyberpunk-theme company-web web-completion-data company-tern dash-functional tern company-statistics company-c-headers company-anaconda company color-theme-sanityinc-tomorrow color-theme-sanityinc-solarized color-identifiers-mode coffee-mode cmake-mode clues-theme clang-format cherry-blossom-theme busybee-theme bubbleberry-theme birds-of-paradise-plus-theme badwolf-theme auto-yasnippet yasnippet apropospriate-theme anti-zenburn-theme anaconda-mode pythonic ample-zen-theme ample-theme alect-themes afternoon-theme ac-ispell auto-complete ws-butler winum which-key wgrep volatile-highlights vi-tilde-fringe uuidgen use-package toc-org spaceline powerline smex restart-emacs request rainbow-delimiters popwin persp-mode pcre2el paradox spinner org-plus-contrib org-bullets open-junk-file neotree move-text macrostep lorem-ipsum linum-relative link-hint ivy-hydra info+ indent-guide hydra hungry-delete hl-todo highlight-parentheses highlight-numbers parent-mode highlight-indentation hide-comnt help-fns+ helm-make helm helm-core google-translate golden-ratio flx-ido flx fill-column-indicator fancy-battery eyebrowse expand-region exec-path-from-shell evil-visualstar evil-visual-mark-mode evil-unimpaired evil-tutor evil-surround evil-search-highlight-persist evil-numbers evil-nerd-commenter evil-mc evil-matchit evil-lisp-state smartparens evil-indent-plus evil-iedit-state iedit evil-exchange evil-escape evil-ediff evil-args evil-anzu anzu evil goto-chg undo-tree eval-sexp-fu highlight elisp-slime-nav dumb-jump popup f s diminish define-word counsel-projectile projectile pkg-info epl counsel swiper ivy column-enforce-mode clean-aindent-mode bind-map bind-key auto-highlight-symbol auto-compile packed dash async aggressive-indent adaptive-wrap ace-window ace-link avy)))
  '(safe-local-variable-values
    (quote
-    ((c-basic-style . "k&r")
-     (semantic-c-obey-conditional-section-parsing-flag)
-     (eval progn
+    ((eval progn
            (require
             (quote projectile))
            (puthash
             (projectile-project-root)
             "make -C /home/brendanz/microchip/harmony/v1_08_01/apps/tcpip/od_charger_wifi/firmware/VoidVestCharger.X --file=nbproject/Makefile-pic32mz_ef_sk__ioexp__freertos.mk" projectile-compilation-cmd-map))
-     (eval progn
-           (require
-            (quote projectile))
-           (puthash
-            (projectile-project-root)
-            "make -C /home/brendanz/microchip/harmony/v1_08_01/apps/tcpip/od_charger_wifi/firmware/wifi_easy_configuration.X --file=nbproject/Makefile-pic32mz_ef_sk__ioexp__freertos.mk" projectile-compilation-cmd-map))
-     (projectile-project-compilation-dir quote /pca10040/blank/armgcc)
-     (projectile-project-compilation-dir . pca10040/blank/armgcc)
-     (projectile-project-compilation-dir \./pca10040/blank/armgcc)
-     (projectile-project-name . smartvalve_simulator))))
- '(semantic-imenu-bucketize-file t)
- '(semantic-imenu-bucketize-type-members t)
- '(semantic-imenu-summary-function (quote semantic-format-tag-prototype))
- '(x-underline-at-descent-line t)
- '(xterm-color-names
-   ["#303030" "#D66F84" "#D79887" "#D49A8A" "#94B1A3" "#A8938C" "#989584" "#BAB2A9"])
- '(xterm-color-names-bright
-   ["#3A3A3A" "#E47386" "#CC816B" "#769188" "#7D6F6A" "#9C8772" "#BAB2A9"]))
+     (c-basic-style . "k&r")
+     (semantic-c-obey-conditional-section-parsing-flag)))))
 (custom-set-faces
  ;; custom-set-faces was added by Custom.
  ;; If you edit it by hand, you could mess it up, so be careful.
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
- '(company-echo-common ((t (:foreground "forest green"))))
- '(highlight ((t (:background "#454545" :foreground "#ffffff" :underline nil))))
- '(underline ((t (:underline t)))))
+ )
