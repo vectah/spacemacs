@@ -64,6 +64,7 @@ values."
                        ein:use-auto-complete t)
      semantic
      c-c++
+     common-lisp
      gtags
      cscope
      html
