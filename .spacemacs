@@ -36,8 +36,9 @@ values."
      ;; Uncomment some layer names and press <SPC f e R> (Vim style) or
      ;; <M-m f e R> (Emacs style) to install them.
      ;; ----------------------------------------------------------------
-     (ivy :variables
-          ivy-initial-inputs-alist nil)
+     ;; (ivy :variables
+     ;;      ivy-initial-inputs-alist nil)
+     helm
      auto-completion
      ;; if you want to enable the tool tip...
      ;; (auto-completion :variables
@@ -340,6 +341,11 @@ This is the place where most of your configurations should be done. Unless it is
 explicitly specified that a variable should be set before a package is loaded,
 you should place your code here."
 
+
+  ;; powerline customizations =================================================
+  (setq spaceline-version-control-p 'nil)
+  (setq spaceline-minor-modes-p 'nil)
+
   ;; misc ======================================================================
   ;; this stupid mode indents when I do not want indents
   (electric-indent-mode nil)
@@ -387,8 +393,7 @@ you should place your code here."
                                             company-etags)))
 
   ;; clean up the org mode completion a bit
-  (setq company-backends-org-mode '((company-dabbrev company-files)
-                                    (company-keywords company-dabbrev-code)))
+  (setq company-backends-org-mode '(company-files))
 
 
   ;; clean up the c completions backends
@@ -446,14 +451,24 @@ you should place your code here."
   (spacemacs/set-leader-keys "opo" 'paste-over-remain-word)
   (spacemacs/set-leader-keys "o;" 'add-semicolon)
   (spacemacs/set-leader-keys "ocd" 'copy-file-path)
-  (spacemacs/set-leader-keys "oip" 'ivy-push-view)
-  (spacemacs/set-leader-keys "oid" 'ivy-pop-view)
   (spacemacs/set-leader-keys "on" 'load-notes)
   (spacemacs/set-leader-keys "or" 'counsel-rg)
   (spacemacs/set-leader-keys "ogd" 'ggtags-find-tag-dwim)
   (spacemacs/set-leader-keys "ogb" 'ggtags-prev-mark)
   (spacemacs/set-leader-keys "ogr" 'ggtags-update-tags)
   (spacemacs/set-leader-keys "ofr" 'fill-region)
+  ;; semantic
+  (spacemacs/set-leader-keys "oss" 'semantic-ia-show-summary)
+  (spacemacs/set-leader-keys "osd" 'semantic-describe-tag)
+  (spacemacs/set-leader-keys "osm" 'helm-semantic-or-imenu)
+  ;; ivy
+  (if (member 'ivy dotspacemacs-configuration-layers)
+      (eval (spacemacs/set-leader-keys "oip" 'ivy-push-view)
+            (spacemacs/set-leader-keys "oid" 'ivy-pop-view)))
+  ;; helm
+  (if (member 'helm dotspacemacs-configuration-layers)
+      (eval (spacemacs/set-leader-keys "ohg" 'helm-grep-do-git-grep)))
+
 
   ;; NOTE possible conflicting keybinds
   (with-eval-after-load 'cc-mode (define-key c-mode-map (kbd "C-c x")  'company-other-backend))
@@ -461,17 +476,30 @@ you should place your code here."
   (spacemacs/set-leader-keys "jy" 'avy-copy-line)
 
   ;; IVY modifications =============================================================================
-  (defun ivy-copy-to-buffer-action (x)
-    (with-ivy-window
-      (insert x)))
+  (defun user-ivy-config ()
 
-  (defun ivy-yank-action (x)
-    (kill-new x))
+    (defun ivy-copy-to-buffer-action (x)
+      (with-ivy-window
+       (insert x)))
 
-  (ivy-set-actions
-   t
-   '(("i" ivy-copy-to-buffer-action "insert")
-     ("y" ivy-yank-action "yank")))
+    (defun ivy-yank-action (x)
+      (kill-new x))
+
+    (ivy-set-actions
+     t
+     '(("i" ivy-copy-to-buffer-action "insert")
+       ("y" ivy-yank-action "yank")))
+    )
+  ;; helm configuration ============================================================================
+  (defun user-helm-config ()
+    'nil
+    )
+
+  (if (member 'ivy dotspacemacs-configuration-layers)
+      (user-ivy-config))
+
+  (if (member 'helm dotspacemacs-configuration-layers)
+      (eval (user-helm-config)))
 
   ;; python ====================================================================
   ;; (setq python-shell-exec-path "/home/brendanz/anaconda/bin")
@@ -517,7 +545,7 @@ you should place your code here."
  '(org-agenda-files (quote ("~/org/vest_charger.org" "~/org/vest_gun.org")))
  '(package-selected-packages
    (quote
-    (challenger-deep-theme slime-company slime common-lisp-snippets function-args evil-snipe zonokai-theme zenburn-theme zen-and-art-theme yapfify xterm-color xcscope web-mode web-beautify unfill underwater-theme ujelly-theme twilight-theme twilight-bright-theme twilight-anti-bright-theme tronesque-theme toxi-theme tao-theme tangotango-theme tango-plus-theme tango-2-theme tagedit sunny-day-theme sublime-themes subatomic256-theme subatomic-theme stickyfunc-enhance srefactor spacegray-theme soothe-theme solarized-theme soft-stone-theme soft-morning-theme soft-charcoal-theme smyx-theme smeargle slim-mode shell-pop seti-theme scss-mode sass-mode reverse-theme rainbow-mode rainbow-identifiers railscasts-theme pyvenv pytest pyenv-mode py-isort purple-haze-theme pug-mode professional-theme planet-theme pip-requirements phoenix-dark-pink-theme phoenix-dark-mono-theme pastels-on-dark-theme pandoc-mode ox-pandoc ht orgit organic-green-theme org-projectile org-present org-pomodoro alert log4e gntp org-download omtose-phellack-theme oldlace-theme occidental-theme obsidian-theme noctilux-theme niflheim-theme naquadah-theme mwim mustang-theme multi-term monokai-theme monochrome-theme molokai-theme moe-theme mmm-mode minimal-theme material-theme markdown-toc markdown-mode majapahit-theme magit-gitflow madhat2r-theme lush-theme livid-mode skewer-mode simple-httpd live-py-mode light-soap-theme less-css-mode json-mode json-snatcher json-reformat js2-refactor multiple-cursors js2-mode js-doc jbeans-theme jazz-theme ir-black-theme inkpot-theme imenu-list hy-mode htmlize heroku-theme hemisu-theme hc-zenburn-theme haml-mode gruvbox-theme gruber-darker-theme grandshell-theme gotham-theme gnuplot gitignore-mode gitconfig-mode gitattributes-mode git-timemachine git-messenger git-link gh-md ggtags gandalf-theme fuzzy flatui-theme flatland-theme firebelly-theme farmhouse-theme evil-magit magit magit-popup git-commit with-editor espresso-theme eshell-z eshell-prompt-extras esh-help engine-mode emmet-mode ein websocket dracula-theme django-theme disaster darktooth-theme autothemer darkokai-theme darkmine-theme darkburn-theme dakrone-theme cython-mode cyberpunk-theme company-web web-completion-data company-tern dash-functional tern company-statistics company-c-headers company-anaconda company color-theme-sanityinc-tomorrow color-theme-sanityinc-solarized color-identifiers-mode coffee-mode cmake-mode clues-theme clang-format cherry-blossom-theme busybee-theme bubbleberry-theme birds-of-paradise-plus-theme badwolf-theme auto-yasnippet yasnippet apropospriate-theme anti-zenburn-theme anaconda-mode pythonic ample-zen-theme ample-theme alect-themes afternoon-theme ac-ispell auto-complete ws-butler winum which-key wgrep volatile-highlights vi-tilde-fringe uuidgen use-package toc-org spaceline powerline smex restart-emacs request rainbow-delimiters popwin persp-mode pcre2el paradox spinner org-plus-contrib org-bullets open-junk-file neotree move-text macrostep lorem-ipsum linum-relative link-hint ivy-hydra info+ indent-guide hydra hungry-delete hl-todo highlight-parentheses highlight-numbers parent-mode highlight-indentation hide-comnt help-fns+ helm-make helm helm-core google-translate golden-ratio flx-ido flx fill-column-indicator fancy-battery eyebrowse expand-region exec-path-from-shell evil-visualstar evil-visual-mark-mode evil-unimpaired evil-tutor evil-surround evil-search-highlight-persist evil-numbers evil-nerd-commenter evil-mc evil-matchit evil-lisp-state smartparens evil-indent-plus evil-iedit-state iedit evil-exchange evil-escape evil-ediff evil-args evil-anzu anzu evil goto-chg undo-tree eval-sexp-fu highlight elisp-slime-nav dumb-jump popup f s diminish define-word counsel-projectile projectile pkg-info epl counsel swiper ivy column-enforce-mode clean-aindent-mode bind-map bind-key auto-highlight-symbol auto-compile packed dash async aggressive-indent adaptive-wrap ace-window ace-link avy)))
+    (helm-themes helm-swoop helm-pydoc helm-projectile helm-mode-manager helm-gtags helm-gitignore helm-flx helm-descbinds helm-css-scss helm-cscope helm-company helm-c-yasnippet helm-ag ace-jump-helm-line challenger-deep-theme slime-company slime common-lisp-snippets function-args evil-snipe zonokai-theme zenburn-theme zen-and-art-theme yapfify xterm-color xcscope web-mode web-beautify unfill underwater-theme ujelly-theme twilight-theme twilight-bright-theme twilight-anti-bright-theme tronesque-theme toxi-theme tao-theme tangotango-theme tango-plus-theme tango-2-theme tagedit sunny-day-theme sublime-themes subatomic256-theme subatomic-theme stickyfunc-enhance srefactor spacegray-theme soothe-theme solarized-theme soft-stone-theme soft-morning-theme soft-charcoal-theme smyx-theme smeargle slim-mode shell-pop seti-theme scss-mode sass-mode reverse-theme rainbow-mode rainbow-identifiers railscasts-theme pyvenv pytest pyenv-mode py-isort purple-haze-theme pug-mode professional-theme planet-theme pip-requirements phoenix-dark-pink-theme phoenix-dark-mono-theme pastels-on-dark-theme pandoc-mode ox-pandoc ht orgit organic-green-theme org-projectile org-present org-pomodoro alert log4e gntp org-download omtose-phellack-theme oldlace-theme occidental-theme obsidian-theme noctilux-theme niflheim-theme naquadah-theme mwim mustang-theme multi-term monokai-theme monochrome-theme molokai-theme moe-theme mmm-mode minimal-theme material-theme markdown-toc markdown-mode majapahit-theme magit-gitflow madhat2r-theme lush-theme livid-mode skewer-mode simple-httpd live-py-mode light-soap-theme less-css-mode json-mode json-snatcher json-reformat js2-refactor multiple-cursors js2-mode js-doc jbeans-theme jazz-theme ir-black-theme inkpot-theme imenu-list hy-mode htmlize heroku-theme hemisu-theme hc-zenburn-theme haml-mode gruvbox-theme gruber-darker-theme grandshell-theme gotham-theme gnuplot gitignore-mode gitconfig-mode gitattributes-mode git-timemachine git-messenger git-link gh-md ggtags gandalf-theme fuzzy flatui-theme flatland-theme firebelly-theme farmhouse-theme evil-magit magit magit-popup git-commit with-editor espresso-theme eshell-z eshell-prompt-extras esh-help engine-mode emmet-mode ein websocket dracula-theme django-theme disaster darktooth-theme autothemer darkokai-theme darkmine-theme darkburn-theme dakrone-theme cython-mode cyberpunk-theme company-web web-completion-data company-tern dash-functional tern company-statistics company-c-headers company-anaconda company color-theme-sanityinc-tomorrow color-theme-sanityinc-solarized color-identifiers-mode coffee-mode cmake-mode clues-theme clang-format cherry-blossom-theme busybee-theme bubbleberry-theme birds-of-paradise-plus-theme badwolf-theme auto-yasnippet yasnippet apropospriate-theme anti-zenburn-theme anaconda-mode pythonic ample-zen-theme ample-theme alect-themes afternoon-theme ac-ispell auto-complete ws-butler winum which-key wgrep volatile-highlights vi-tilde-fringe uuidgen use-package toc-org spaceline powerline smex restart-emacs request rainbow-delimiters popwin persp-mode pcre2el paradox spinner org-plus-contrib org-bullets open-junk-file neotree move-text macrostep lorem-ipsum linum-relative link-hint ivy-hydra info+ indent-guide hydra hungry-delete hl-todo highlight-parentheses highlight-numbers parent-mode highlight-indentation hide-comnt help-fns+ helm-make helm helm-core google-translate golden-ratio flx-ido flx fill-column-indicator fancy-battery eyebrowse expand-region exec-path-from-shell evil-visualstar evil-visual-mark-mode evil-unimpaired evil-tutor evil-surround evil-search-highlight-persist evil-numbers evil-nerd-commenter evil-mc evil-matchit evil-lisp-state smartparens evil-indent-plus evil-iedit-state iedit evil-exchange evil-escape evil-ediff evil-args evil-anzu anzu evil goto-chg undo-tree eval-sexp-fu highlight elisp-slime-nav dumb-jump popup f s diminish define-word counsel-projectile projectile pkg-info epl counsel swiper ivy column-enforce-mode clean-aindent-mode bind-map bind-key auto-highlight-symbol auto-compile packed dash async aggressive-indent adaptive-wrap ace-window ace-link avy)))
  '(safe-local-variable-values
    (quote
     ((org-todo-keyword-faces
@@ -547,4 +575,4 @@ you should place your code here."
  ;; If you edit it by hand, you could mess it up, so be careful.
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
- )
+ '(default ((t (:foreground "#DCDCCC" :background "#3F3F3F")))))
