@@ -40,17 +40,20 @@ values."
      ;; ----------------------------------------------------------------
      (ivy :variables
           ivy-initial-inputs-alist nil)
+     (mu4e :variables
+           mu4e-installation-path "/usr/share/emacs/site-lisp")
      ;; helm
-     auto-completion
+     ;; auto-completion
      ;; if you want to enable the tool tip...
-     ;; (auto-completion :variables
-     ;;                  auto-completion-enable-sort-by-usage t
-     ;;                  auto-completion-enable-help-tooltip t)
+     (auto-completion :variables
+                      auto-completion-enable-sort-by-usage t
+                      auto-completion-enable-help-tooltip t)
      better-defaults
      emacs-lisp
      git
      markdown
-     org
+     (org :variables
+          org-use-speed-commands t)
      (shell :variables
             shell-default-height 30
             shell-default-position 'bottom
@@ -67,7 +70,8 @@ values."
      (ipython-notebook :variables
                        ein:use-auto-complete t)
      semantic
-     c-c++
+     (c-c++ :variables
+            c-c++-enable-clang-support t)
      common-lisp
      gtags
      cscope
@@ -84,7 +88,14 @@ values."
    ;; configuration in `dotspacemacs/user-config'.
    dotspacemacs-additional-packages
    '(
+     doom-themes
+     abyss-theme
      function-args
+     visual-regexp
+     visual-regexp-steroids
+     outorg
+     outshine
+     navi-mode
    )
    ;; A list of packages that cannot be updated.
    dotspacemacs-frozen-packages '()
@@ -157,7 +168,8 @@ values."
    ;; List of themes, the first of the list is loaded when spacemacs starts.
    ;; Press <SPC> T n to cycle to the next theme in the list (works great
    ;; with 2 themes variants, one dark and one light)
-   dotspacemacs-themes '(zenburn
+   dotspacemacs-themes '(doom-one
+                         zenburn
                          spacemacs-dark
                          spacemacs-light
                          default)
@@ -333,6 +345,10 @@ executes.
  This function is mostly useful for variables that need to be set
 before packages are loaded. If you are unsure, you should try in setting them in
 `dotspacemacs/user-config' first."
+  (defvar outline-minor-mode-prefix "\M-#")
+  (defvar spacemacs-evil-cursor-colors '((normal . "turquoise")
+                                         (insert . "magenta"))
+    "Colors assigned to evil states.")
   )
 
 (defun dotspacemacs/user-config ()
@@ -343,15 +359,53 @@ This is the place where most of your configurations should be done. Unless it is
 explicitly specified that a variable should be set before a package is loaded,
 you should place your code here."
 
+  ;; outshine/outorg/navi-mode settings ====================================
+  (require 'outshine)
+  (add-hook 'outline-minor-mode-hook 'outshine-hook-function)
+  (setq outshine-use-speed-commands t)
+
+  ;; attach outshine to major modes
+  (add-hook 'emacs-lisp-mode-hook 'outline-minor-mode)
+  (add-hook 'python-mode-hook 'outline-minor-mode)
+  (add-hook 'python-mode-hook 'outline-minor-mode)
+
+  ;; visual regexp settings ================================================
+  (require 'visual-regexp-steroids)
+
+  ;; multiple cursors ======================================================
+  ;; no prompt when using multiple cursors
+  (setq mc/always-run-for-all t)
+
+  ;; disables ===============================================================
+  ;; apparently this fixes iedit in cc-mode...
+  ;; https://github.com/hlissner/evil-multiedit/issues/8
+  (setq ggtags-highlight-tag nil)
+
+  ;; mu4e setup =============================================================
+  ;;; Set up some common mu4e variables
+  (setq mu4e-maildir "~/Maildir"
+        mu4e-trash-folder "/Trash"
+        mu4e-refile-folder "/Archive"
+        mu4e-get-mail-command "offlineimap"
+        mu4e-update-interval nil
+        mu4e-compose-signature-auto-include nil
+        mu4e-view-show-images t
+        mu4e-view-show-addresses t
+        send-mail-function 'smtpmail-send-it)
+
   ;; evil cursor color customization =========================================
-  (setq evil-normal-state-cursor '("light gray" box))
-  (setq evil-insert-state-cursor '("light sea green" bar))
-  (setq evil-motion-state-cursor '("light blue" box))
-  (setq evil-replace-state-cursor '("tomato" (hbar . 4)))
+  ;; this is who you change the evil cursor colors
+  ;; (setq evil-normal-state-cursor '("light gray" box))
+  ;; (setq evil-insert-state-cursor '("light sea green" bar))
+  ;; (setq evil-motion-state-cursor '("light blue" box))
+  ;; (setq evil-replace-state-cursor '("tomato" (hbar . 4)))
 
   ;; powerline customizations =================================================
-  (setq spaceline-version-control-p 'nil)
+  ;; (setq spaceline-version-control-p 'nil)
   (setq spaceline-minor-modes-p 'nil)
+  ;; this is how you change the background of the modeline evil state colors
+  (set-face-attribute 'spacemacs-normal-face
+                      nil :background "orchid")
 
   ;; misc ======================================================================
   ;; this stupid mode indents when I do not want indents
@@ -441,9 +495,12 @@ you should place your code here."
   ;;                                        (company-semantic)
   ;;                                        (company-etags
   ;;                                         company-gtags)))
-  (setq company-backends-c-mode-common '((company-dabbrev-code
-                                          company-keywords
-                                          company-semantic)
+  (setq company-backends-c-mode-common '(company-clang
+                                         company-dabbrev-code
+                                         company-gtags
+                                         company-semantic
+                                         (company-dabbrev-code
+                                          company-keywords)
                                          (company-etags
                                           company-gtags)))
 
@@ -460,7 +517,7 @@ you should place your code here."
 
   ;; semantic ==================================================================
   ;; remove annoying semantic features
-  (add-hook 'semantic-mode-hook (lambda () (global-semantic-stickyfunc-mode -1)))
+  ;; (add-hook 'semantic-mode-hook (lambda () (global-semantic-stickyfunc-mode -1)))
   (add-hook 'semantic-mode-hook (lambda () (global-semantic-idle-summary-mode -1)))
 
   ;; parsing #ifs in some files causes issues so disable globally
@@ -492,30 +549,53 @@ you should place your code here."
         [?A ?\; escape])
 
   ;; Custom keybindings ========================================================
+
+  ;; two letters (,/;/n)
   (spacemacs/set-leader-keys "o," 'split-at-next-comma)
-  (spacemacs/set-leader-keys "opw" 'paste-over-word)
-  (spacemacs/set-leader-keys "opo" 'paste-over-remain-word)
   (spacemacs/set-leader-keys "o;" 'add-semicolon)
-  (spacemacs/set-leader-keys "ocd" 'copy-file-path)
   (spacemacs/set-leader-keys "on" 'load-notes)
-  (spacemacs/set-leader-keys "orp" 'counsel-projectile-rg)
-  (spacemacs/set-leader-keys "orf" 'counsel-rg)
+
+  ;; a (p/f) - ag
+  (spacemacs/set-leader-keys "oap" 'counsel-projectile-ag)
+  (spacemacs/set-leader-keys "oaf" 'counsel-ag)
+
+  ;; c (d) - copy
+  (spacemacs/set-leader-keys "ocd" 'copy-file-path)
+
+  ;; f (r) - fill region
+  (spacemacs/set-leader-keys "ofr" 'fill-region)
+
+  ;; g (d/b/r) - ggtags
   (spacemacs/set-leader-keys "ogd" 'ggtags-find-tag-dwim)
   (spacemacs/set-leader-keys "ogb" 'ggtags-prev-mark)
   (spacemacs/set-leader-keys "ogr" 'ggtags-update-tags)
-  (spacemacs/set-leader-keys "ofr" 'fill-region)
-  ;; semantic
-  (spacemacs/set-leader-keys "oss" 'semantic-ia-show-summary)
-  (spacemacs/set-leader-keys "osd" 'semantic-describe-tag)
-  (spacemacs/set-leader-keys "osm" 'helm-semantic-or-imenu)
-  ;; ivy
-  (if (member 'ivy dotspacemacs-configuration-layers)
-      (eval (spacemacs/set-leader-keys "oip" 'ivy-push-view)
-            (spacemacs/set-leader-keys "oid" 'ivy-pop-view)))
-  ;; helm
+
+  ;; h (g) - helm
   (if (member 'helm dotspacemacs-configuration-layers)
       (eval (spacemacs/set-leader-keys "ohg" 'helm-grep-do-git-grep)))
 
+  ;; i (p/d) - ivy
+  (if (member 'ivy dotspacemacs-configuration-layers)
+      (eval (spacemacs/set-leader-keys "oip" 'ivy-push-view)
+            (spacemacs/set-leader-keys "oid" 'ivy-pop-view)))
+
+  ;; p (w/o) - paste
+  (spacemacs/set-leader-keys "opw" 'paste-over-word)
+  (spacemacs/set-leader-keys "opo" 'paste-over-remain-word)
+
+  ;; r (p/f) - ripgrep
+  (spacemacs/set-leader-keys "orp" 'counsel-projectile-rg)
+  (spacemacs/set-leader-keys "orf" 'counsel-rg)
+
+  ;; s (s/d/m) - semantic
+  (spacemacs/set-leader-keys "oss" 'semantic-ia-show-summary)
+  (spacemacs/set-leader-keys "osd" 'semantic-describe-tag)
+  (spacemacs/set-leader-keys "osm" 'helm-semantic-or-imenu)
+
+  ;; v (q/r)
+  (spacemacs/set-leader-keys "ovr" 'vr/replace)
+  (spacemacs/set-leader-keys "ovq" 'vr/query-replace)
+  (spacemacs/set-leader-keys "ovm" 'vr/mc-mark)
 
   ;; NOTE possible conflicting keybinds
   (with-eval-after-load 'cc-mode (define-key c-mode-map (kbd "C-c x")  'company-other-backend))
@@ -573,6 +653,9 @@ you should place your code here."
   (spacemacs|define-custom-layout "@dired"
     :binding "D")
 
+  (spacemacs|define-custom-layout "@mu4e"
+    :binding "M")
+
   ;; end of user config ========================================================
   )
 
@@ -587,12 +670,12 @@ you should place your code here."
  ;; If there is more than one, they won't work right.
  '(custom-safe-themes
    (quote
-    ("2d32455b3acc27bef4dc912f74c14a371cf7167a075bbd4f90ac14e761359e5b" default)))
+    ("6fc0ae7cc2abd82d8add1140874ccf8773feaaae73a704981d52fdf357341038" "2d32455b3acc27bef4dc912f74c14a371cf7167a075bbd4f90ac14e761359e5b" default)))
  '(evil-want-Y-yank-to-eol nil)
  '(org-agenda-files (quote ("~/org/vest_charger.org" "~/org/vest_gun.org")))
  '(package-selected-packages
    (quote
-    (vimrc-mode dactyl-mode insert-shebang fish-mode company-shell helm-themes helm-swoop helm-pydoc helm-projectile helm-mode-manager helm-gtags helm-gitignore helm-flx helm-descbinds helm-css-scss helm-cscope helm-company helm-c-yasnippet helm-ag ace-jump-helm-line challenger-deep-theme slime-company slime common-lisp-snippets function-args evil-snipe zonokai-theme zenburn-theme zen-and-art-theme yapfify xterm-color xcscope web-mode web-beautify unfill underwater-theme ujelly-theme twilight-theme twilight-bright-theme twilight-anti-bright-theme tronesque-theme toxi-theme tao-theme tangotango-theme tango-plus-theme tango-2-theme tagedit sunny-day-theme sublime-themes subatomic256-theme subatomic-theme stickyfunc-enhance srefactor spacegray-theme soothe-theme solarized-theme soft-stone-theme soft-morning-theme soft-charcoal-theme smyx-theme smeargle slim-mode shell-pop seti-theme scss-mode sass-mode reverse-theme rainbow-mode rainbow-identifiers railscasts-theme pyvenv pytest pyenv-mode py-isort purple-haze-theme pug-mode professional-theme planet-theme pip-requirements phoenix-dark-pink-theme phoenix-dark-mono-theme pastels-on-dark-theme pandoc-mode ox-pandoc ht orgit organic-green-theme org-projectile org-present org-pomodoro alert log4e gntp org-download omtose-phellack-theme oldlace-theme occidental-theme obsidian-theme noctilux-theme niflheim-theme naquadah-theme mwim mustang-theme multi-term monokai-theme monochrome-theme molokai-theme moe-theme mmm-mode minimal-theme material-theme markdown-toc markdown-mode majapahit-theme magit-gitflow madhat2r-theme lush-theme livid-mode skewer-mode simple-httpd live-py-mode light-soap-theme less-css-mode json-mode json-snatcher json-reformat js2-refactor multiple-cursors js2-mode js-doc jbeans-theme jazz-theme ir-black-theme inkpot-theme imenu-list hy-mode htmlize heroku-theme hemisu-theme hc-zenburn-theme haml-mode gruvbox-theme gruber-darker-theme grandshell-theme gotham-theme gnuplot gitignore-mode gitconfig-mode gitattributes-mode git-timemachine git-messenger git-link gh-md ggtags gandalf-theme fuzzy flatui-theme flatland-theme firebelly-theme farmhouse-theme evil-magit magit magit-popup git-commit with-editor espresso-theme eshell-z eshell-prompt-extras esh-help engine-mode emmet-mode ein websocket dracula-theme django-theme disaster darktooth-theme autothemer darkokai-theme darkmine-theme darkburn-theme dakrone-theme cython-mode cyberpunk-theme company-web web-completion-data company-tern dash-functional tern company-statistics company-c-headers company-anaconda company color-theme-sanityinc-tomorrow color-theme-sanityinc-solarized color-identifiers-mode coffee-mode cmake-mode clues-theme clang-format cherry-blossom-theme busybee-theme bubbleberry-theme birds-of-paradise-plus-theme badwolf-theme auto-yasnippet yasnippet apropospriate-theme anti-zenburn-theme anaconda-mode pythonic ample-zen-theme ample-theme alect-themes afternoon-theme ac-ispell auto-complete ws-butler winum which-key wgrep volatile-highlights vi-tilde-fringe uuidgen use-package toc-org spaceline powerline smex restart-emacs request rainbow-delimiters popwin persp-mode pcre2el paradox spinner org-plus-contrib org-bullets open-junk-file neotree move-text macrostep lorem-ipsum linum-relative link-hint ivy-hydra info+ indent-guide hydra hungry-delete hl-todo highlight-parentheses highlight-numbers parent-mode highlight-indentation hide-comnt help-fns+ helm-make helm helm-core google-translate golden-ratio flx-ido flx fill-column-indicator fancy-battery eyebrowse expand-region exec-path-from-shell evil-visualstar evil-visual-mark-mode evil-unimpaired evil-tutor evil-surround evil-search-highlight-persist evil-numbers evil-nerd-commenter evil-mc evil-matchit evil-lisp-state smartparens evil-indent-plus evil-iedit-state iedit evil-exchange evil-escape evil-ediff evil-args evil-anzu anzu evil goto-chg undo-tree eval-sexp-fu highlight elisp-slime-nav dumb-jump popup f s diminish define-word counsel-projectile projectile pkg-info epl counsel swiper ivy column-enforce-mode clean-aindent-mode bind-map bind-key auto-highlight-symbol auto-compile packed dash async aggressive-indent adaptive-wrap ace-window ace-link avy)))
+    (abyss-theme spaceline-all-the-icons doom-vibrant-theme doom-themes zerodark-theme sourcerer-theme-theme sourcerer-theme navi-mode outshine outorg visual-regexp-steroids visual-regexp deferred company-quickhelp pos-tip mu4e-maildirs-extension mu4e-alert seoul256-theme vimrc-mode dactyl-mode insert-shebang fish-mode company-shell helm-themes helm-swoop helm-pydoc helm-projectile helm-mode-manager helm-gtags helm-gitignore helm-flx helm-descbinds helm-css-scss helm-cscope helm-company helm-c-yasnippet helm-ag ace-jump-helm-line challenger-deep-theme slime-company slime common-lisp-snippets function-args evil-snipe zonokai-theme zenburn-theme zen-and-art-theme yapfify xterm-color xcscope web-mode web-beautify unfill underwater-theme ujelly-theme twilight-theme twilight-bright-theme twilight-anti-bright-theme tronesque-theme toxi-theme tao-theme tangotango-theme tango-plus-theme tango-2-theme tagedit sunny-day-theme sublime-themes subatomic256-theme subatomic-theme stickyfunc-enhance srefactor spacegray-theme soothe-theme solarized-theme soft-stone-theme soft-morning-theme soft-charcoal-theme smyx-theme smeargle slim-mode shell-pop seti-theme scss-mode sass-mode reverse-theme rainbow-mode rainbow-identifiers railscasts-theme pyvenv pytest pyenv-mode py-isort purple-haze-theme pug-mode professional-theme planet-theme pip-requirements phoenix-dark-pink-theme phoenix-dark-mono-theme pastels-on-dark-theme pandoc-mode ox-pandoc ht orgit organic-green-theme org-projectile org-present org-pomodoro alert log4e gntp org-download omtose-phellack-theme oldlace-theme occidental-theme obsidian-theme noctilux-theme niflheim-theme naquadah-theme mwim mustang-theme multi-term monokai-theme monochrome-theme molokai-theme moe-theme mmm-mode minimal-theme material-theme markdown-toc markdown-mode majapahit-theme magit-gitflow madhat2r-theme lush-theme livid-mode skewer-mode simple-httpd live-py-mode light-soap-theme less-css-mode json-mode json-snatcher json-reformat js2-refactor multiple-cursors js2-mode js-doc jbeans-theme jazz-theme ir-black-theme inkpot-theme imenu-list hy-mode htmlize heroku-theme hemisu-theme hc-zenburn-theme haml-mode gruvbox-theme gruber-darker-theme grandshell-theme gotham-theme gnuplot gitignore-mode gitconfig-mode gitattributes-mode git-timemachine git-messenger git-link gh-md ggtags gandalf-theme fuzzy flatui-theme flatland-theme firebelly-theme farmhouse-theme evil-magit magit magit-popup git-commit with-editor espresso-theme eshell-z eshell-prompt-extras esh-help engine-mode emmet-mode ein websocket dracula-theme django-theme disaster darktooth-theme autothemer darkokai-theme darkmine-theme darkburn-theme dakrone-theme cython-mode cyberpunk-theme company-web web-completion-data company-tern dash-functional tern company-statistics company-c-headers company-anaconda company color-theme-sanityinc-tomorrow color-theme-sanityinc-solarized color-identifiers-mode coffee-mode cmake-mode clues-theme clang-format cherry-blossom-theme busybee-theme bubbleberry-theme birds-of-paradise-plus-theme badwolf-theme auto-yasnippet yasnippet apropospriate-theme anti-zenburn-theme anaconda-mode pythonic ample-zen-theme ample-theme alect-themes afternoon-theme ac-ispell auto-complete ws-butler winum which-key wgrep volatile-highlights vi-tilde-fringe uuidgen use-package toc-org spaceline powerline smex restart-emacs request rainbow-delimiters popwin persp-mode pcre2el paradox spinner org-plus-contrib org-bullets open-junk-file neotree move-text macrostep lorem-ipsum linum-relative link-hint ivy-hydra info+ indent-guide hydra hungry-delete hl-todo highlight-parentheses highlight-numbers parent-mode highlight-indentation hide-comnt help-fns+ helm-make helm helm-core google-translate golden-ratio flx-ido flx fill-column-indicator fancy-battery eyebrowse expand-region exec-path-from-shell evil-visualstar evil-visual-mark-mode evil-unimpaired evil-tutor evil-surround evil-search-highlight-persist evil-numbers evil-nerd-commenter evil-mc evil-matchit evil-lisp-state smartparens evil-indent-plus evil-iedit-state iedit evil-exchange evil-escape evil-ediff evil-args evil-anzu anzu evil goto-chg undo-tree eval-sexp-fu highlight elisp-slime-nav dumb-jump popup f s diminish define-word counsel-projectile projectile pkg-info epl counsel swiper ivy column-enforce-mode clean-aindent-mode bind-map bind-key auto-highlight-symbol auto-compile packed dash async aggressive-indent adaptive-wrap ace-window ace-link avy)))
  '(safe-local-variable-values
    (quote
     ((org-todo-keyword-faces
@@ -616,10 +699,13 @@ you should place your code here."
             (projectile-project-root)
             "make -C /home/brendanz/microchip/harmony/v1_08_01/apps/tcpip/od_charger_wifi/firmware/VoidVestCharger.X --file=nbproject/Makefile-pic32mz_ef_sk__ioexp__freertos.mk" projectile-compilation-cmd-map))
      (c-basic-style . "k&r")
-     (semantic-c-obey-conditional-section-parsing-flag)))))
+     (semantic-c-obey-conditional-section-parsing-flag))))
+ '(send-mail-function (quote mailclient-send-it))
+ '(smtpmail-smtp-server "smtp.gmail.com")
+ '(smtpmail-smtp-service 587))
 (custom-set-faces
  ;; custom-set-faces was added by Custom.
  ;; If you edit it by hand, you could mess it up, so be careful.
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
- '(default ((t (:foreground "#DCDCCC" :background "#3F3F3F" :family "Source Code Pro" :foundry "ADBO" :slant normal :weight normal :height 98 :width normal)))))
+ )
